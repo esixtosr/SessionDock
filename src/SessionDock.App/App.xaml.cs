@@ -48,11 +48,12 @@ public partial class App : System.Windows.Application
             resources["WindowBrush"] = SystemColors.WindowBrush; resources["PanelBrush"] = SystemColors.WindowBrush;
             resources["InputBrush"] = SystemColors.WindowBrush; resources["TextBrush"] = SystemColors.WindowTextBrush;
             resources["MutedBrush"] = SystemColors.WindowTextBrush; resources["AccentBrush"] = SystemColors.HighlightBrush;
+            resources["BorderBrush"] = SystemColors.WindowTextBrush; resources["HoverBrush"] = SystemColors.ControlBrush; resources["AccentSurfaceBrush"] = SystemColors.ControlBrush;
             return;
         }
         bool light = theme == AppTheme.Light || theme == AppTheme.System && IsSystemLight();
-        string[] keys = ["WindowBrush", "PanelBrush", "InputBrush", "TextBrush", "MutedBrush", "AccentBrush"];
-        string[] colors = light ? ["#F4F6F4", "#FFFFFF", "#FFFFFF", "#202A24", "#4F6256", "#177C41"] : ["#202323", "#2A2E2D", "#363C3A", "#F2F5F3", "#BAC6BF", "#79D39D"];
+        string[] keys = ["WindowBrush", "PanelBrush", "InputBrush", "TextBrush", "MutedBrush", "AccentBrush", "BorderBrush", "HoverBrush", "AccentSurfaceBrush"];
+        string[] colors = light ? ["#F1F5F9", "#FFFFFF", "#F4F7FA", "#17263B", "#4C6077", "#006D60", "#B4C4D4", "#E2ECF3", "#DBF3EC"] : ["#070D1B", "#101B2D", "#17253A", "#E5EDF7", "#A4B2C8", "#52E0C4", "#2A3B53", "#20324A", "#123C3C"];
         for (int i = 0; i < keys.Length; i++) resources[keys[i]] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colors[i]));
     }
     private static bool IsSystemLight()

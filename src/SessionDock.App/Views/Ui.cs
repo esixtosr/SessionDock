@@ -55,7 +55,7 @@ internal static class Ui
     {
         // WPF implicit Window styles do not match derived window types. Apply
         // the shared style explicitly; its dynamic brushes still follow theme
-        // and high-contrast changes without replacing native control templates.
+        // and high-contrast palettes. Window chrome and control behavior remain native.
         window.SetResourceReference(FrameworkElement.StyleProperty, "SessionDockWindowStyle");
         double width = Math.Max(240, SystemParameters.WorkArea.Width - 24);
         double height = Math.Max(180, SystemParameters.WorkArea.Height - 24);
