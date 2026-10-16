@@ -1,0 +1,59 @@
+name: Windows preview checks
+on:
+  push:
+    branches: [main, 'codex/**']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Generate and check interop from installed Windows control
+        shell: powershell
+        run: ./scripts/Generate-Interop.ps1
+      - name: Locked restore
+        run: dotnet restore SessionDock.slnx --locked-mode
+      - name: Compile
+        run: dotnet build SessionDock.slnx -c Release --no-restore
+      - name: Logic and persistence tests
+        run: dotnet test tests/SessionDock.Tests/SessionDock.Tests.csproj -c Release --no-build --no-restore --logger trx --results-directory artifacts/TestResults
+      - name: Windows control and temporary credential probe (no network)
+        shell: powershell
+        timeout-minutes: 3
+        run: ./scripts/Test-Engine.ps1
+      - name: Publish self-contained Windows preview
+        run: dotnet publish src/SessionDock.App/SessionDock.App.csproj -c Release --self-contained true --no-restore -o artifacts/SessionDock-win-x64
+      - name: Test published app using isolated UI Automation
+        shell: powershell
+        timeout-minutes: 3
+        run: ./scripts/Test-UI.ps1
+      - name: Prepare download, source, and checksums
+        shell: powershell
+        run: ./scripts/Package-Preview.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SessionDock-release-files
+          path: artifacts/release
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Windows-verification
+          path: |
+            artifacts/TestResults
+            artifacts/verification
+            artifacts/interop/*.json
+          if-no-files-found: warn
+# A passing build/probe/UI check does not prove real RDP logon, device redirection,
+# Windows 11 compatibility, or installation. These remain tester acceptance checks.

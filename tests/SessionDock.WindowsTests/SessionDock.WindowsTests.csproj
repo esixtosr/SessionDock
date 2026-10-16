@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <PlatformTarget>x64</PlatformTarget>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/SessionDock.Rdp.Windows/SessionDock.Rdp.Windows.csproj" />
+    <ProjectReference Include="../../src/SessionDock.Infrastructure/SessionDock.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="Exists('../../artifacts/interop/Interop.MSTSCLib.dll')">
+    <Content Include="../../artifacts/interop/Interop.MSTSCLib.dll" Link="Interop.MSTSCLib.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

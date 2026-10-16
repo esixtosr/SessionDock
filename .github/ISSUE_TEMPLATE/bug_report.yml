@@ -1,0 +1,79 @@
+name: Report a problem or test result
+description: Tell us what worked, what failed, or where you got stuck.
+title: "[Feedback]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A short report is enough. SessionDock is a Windows preview for saved PC connections; Windows behavior is still being verified.
+        Issues are public. Do not include passwords, account details, private hostnames/IP addresses, or a copy of your connection database. Use names such as “Test PC” instead.
+  - type: input
+    id: version
+    attributes:
+      label: SessionDock version or download name
+      description: Copy the release name or ZIP filename. “Not sure” is okay.
+      placeholder: The release version or ZIP filename you downloaded
+    validations:
+      required: true
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows version
+      description: Look under Settings → System → About → Windows specifications. No device ID or product ID is needed.
+      placeholder: Windows 11, version and OS build; or “not sure”
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part did you try?
+      options:
+        - Opening or installing SessionDock
+        - Saving a PC and reopening the app
+        - Connecting with Ask when required
+        - Connecting with saved credentials
+        - Clipboard or sound
+        - Two session windows
+        - Layout, keyboard, or accessibility
+        - Something else
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: What was the result?
+      options:
+        - Worked
+        - Didn't work
+        - Not tried yet
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: What did you do?
+      description: A few numbered steps are enough. If you have not tried it yet, say what stopped you.
+      placeholder: |
+        1. Opened SessionDock from the extracted ZIP.
+        2. Added “Test PC” and selected Ask when required.
+        3. Double-clicked its card.
+    validations:
+      required: true
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: What did you expect, and what actually happened?
+      description: Include any error message or code, with private details removed. A successful result is useful too.
+      placeholder: |
+        Expected:
+        Actually happened:
+        Error message or code, if any:
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshot or extra notes (optional)
+      description: Paste an image here only after hiding passwords, usernames, addresses, and private remote-screen content. Do not attach credential dialogs, databases, or profile exports.
+    validations:
+      required: false

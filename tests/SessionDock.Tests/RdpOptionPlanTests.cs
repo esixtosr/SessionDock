@@ -1,0 +1,90 @@
+using SessionDock.Core;
+using SessionDock.Rdp.Windows;
+using Xunit;
+
+namespace SessionDock.Tests;
+
+public sealed class RdpOptionPlanTests
+{
+    private static ConnectionProfile Profile() => new() { Host = "authorized-test.invalid" };
+    private static object Value(IReadOnlyList<RdpOption> options, string member) => Assert.Single(options, x => x.Member == member).Value;
+
+    [Fact]
+    public void DefaultMappingRequiresServerAuthenticationAndNla()
+    {
+        var options = RdpOptionPlan.Create(Profile(), null, 1200, 720);
+        Assert.Equal(1u, Value(options, "AuthenticationLevel"));
+        Assert.Equal(true, Value(options, "EnableCredSspSupport"));
+        Assert.Equal(false, Value(options, "RedirectDrives"));
+        Assert.Equal(false, Value(options, "RedirectPorts"));
+        Assert.Equal(false, Value(options, "RedirectDevices"));
+        Assert.Equal(false, Value(options, "RedirectPOSDevices"));
+        Assert.DoesNotContain(options, x => x.Member.Contains("Password"));
+    }
+    [Fact]
+    public void FixedResolutionIsIndependentOfScalingAndDynamicResolution()
+    {
+        var p = Profile();
+        p.Display = new() { AutomaticResolution = false, Width = 1600, Height = 900, FitToWindow = true, DynamicResolution = false };
+        var options = RdpOptionPlan.Create(p, null, 500, 400);
+        Assert.Equal(1600, Value(options, "DesktopWidth"));
+        Assert.Equal(900, Value(options, "DesktopHeight"));
+        Assert.Equal(true, Value(options, "SmartSizing"));
+    }
+    [Fact]
+    public void GatewayBypassUsesDocumentedDirectThenGatewayMode()
+    {
+        var gateway = new GatewayProfile { Host = "rdgateway.invalid" };
+        var p = Profile(); p.GatewayId = gateway.Id; p.GatewayBypass = true;
+        var options = RdpOptionPlan.Create(p, gateway, 1000, 700);
+        Assert.Equal(2u, Value(options, "GatewayUsageMethod"));
+        p.GatewayBypass = false;
+        Assert.Equal(1u, Value(RdpOptionPlan.Create(p, gateway, 1000, 700), "GatewayUsageMethod"));
+    }
+    [Theory]
+    [InlineData(SoundMode.Local, 0)]
+    [InlineData(SoundMode.Remote, 1)]
+    [InlineData(SoundMode.Off, 2)]
+    public void SoundMapsToAdvancedSettings(SoundMode sound, int expected)
+    {
+        var p = Profile(); p.Redirection.Sound = sound;
+        var option = Assert.Single(RdpOptionPlan.Create(p, null, 1000, 700), x => x.Member == "AudioRedirectionMode");
+        Assert.Equal(RdpOptionTarget.Advanced, option.Target); Assert.Equal((uint)expected, option.Value);
+    }
+    [Theory]
+    [InlineData(KeyboardRouting.Local, 0)]
+    [InlineData(KeyboardRouting.RemoteWhenFocused, 1)]
+    [InlineData(KeyboardRouting.RemoteInFullScreen, 2)]
+    public void KeyboardMapsToNativeHookMode(KeyboardRouting routing, int expected)
+    {
+        var p = Profile(); p.Input.KeyboardRouting = routing;
+        Assert.Equal(expected, Value(RdpOptionPlan.Create(p, null, 1000, 700), "KeyboardHookMode"));
+    }
+    [Fact]
+    public void UnsupportedFolderScopeNeverBecomesWholeDriveSharing()
+    {
+        var p = Profile(); p.Redirection.RedirectFolders = true;
+        p.Redirection.Folders.Add(new() { Path = @"C:\Scoped", ReadOnly = true });
+        Assert.Throws<NotSupportedException>(() => RdpOptionPlan.Create(p, null, 1000, 700));
+    }
+    [Fact]
+    public void UnsupportedSessionLocalMouseSwapFailsBeforeConnection()
+    {
+        var p = Profile(); p.SwapMouseButtons = true;
+        Assert.Throws<NotSupportedException>(() => RdpOptionPlan.Create(p, null, 1000, 700));
+    }
+    [Fact]
+    public void MismatchedGatewayCannotAccidentallyRouteConnection()
+    {
+        var p = Profile(); p.GatewayId = Guid.NewGuid();
+        Assert.Throws<ArgumentException>(() => RdpOptionPlan.Create(p, new() { Host = "other.invalid" }, 1000, 700));
+    }
+    [Fact]
+    public void ExplicitClipboardAndCaptureOffReachTheControl()
+    {
+        var p = Profile(); p.Redirection.Clipboard = ClipboardMode.Disabled; p.Redirection.Microphone = false;
+        var options = RdpOptionPlan.Create(p, null, 1000, 700);
+        Assert.Equal(false, Value(options, "RedirectClipboard"));
+        Assert.Equal(false, Value(options, "AudioCaptureRedirectionMode"));
+    }
+}

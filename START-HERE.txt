@@ -1,0 +1,32 @@
+SessionDock — early Windows preview
+
+OPEN THE APP
+1. Right-click the downloaded ZIP and choose Extract All.
+2. Open the extracted folder and double-click SessionDock.exe.
+3. Keep the other files next to it. You do not need development tools.
+4. Optional: run Install.cmd to add SessionDock to your Start menu.
+
+TRY ONE CONNECTION
+Choose Add > Add PC. Enter a remote PC you are allowed to use, give it a name,
+and leave Credentials on Ask when required. Save it, then double-click its card.
+The remote PC must already accept Remote Desktop. If you normally need a VPN,
+connect that first. This app does not create remote accounts or set up your VPN.
+
+THIS IS A TEST VERSION
+The app is still being developed. It is unsigned, and some features are unfinished.
+If it fails to open or connect, that is useful feedback. Report the message you see;
+do not turn off Windows security just to test it. Use the resizable session window
+if full screen is unavailable.
+
+Folder sharing/read-only folders, one-way clipboard, cameras, multiple monitors,
+remote DPI, mouse-button swapping and desktop thumbnails are not available yet.
+Cloud workspaces and published apps will come later.
+
+SEND FEEDBACK
+Simple checklist: docs/TESTING-FOR-FRIENDS.md
+Report a problem: https://github.com/esixtosr/SessionDock/issues
+Project/downloads: https://github.com/esixtosr/SessionDock
+
+Include your app version, Windows version, what you clicked, and what happened.
+Never include passwords or private account/server details. Closing a session
+should disconnect it without signing you out of the remote PC.

@@ -1,0 +1,58 @@
+name: Suggest an improvement
+description: Explain what would make SessionDock easier or more useful.
+title: "[Idea]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        SessionDock currently focuses on saved PC connections. Cloud workspaces and published apps are planned separately.
+        Describe the task you want to make easier. Issues are public, so leave out passwords and private account or computer details.
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like to change?
+      description: Plain language is fine. You do not need to suggest how to build it.
+      placeholder: I would like to…
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: When would this help?
+      description: Describe what you do today and the result you would prefer.
+      placeholder: |
+        Today I:
+        I would prefer:
+    validations:
+      required: true
+  - type: dropdown
+    id: current-result
+    attributes:
+      label: Have you tried the related part of SessionDock?
+      options:
+        - Worked
+        - Didn't work
+        - Not tried yet
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: SessionDock version or download name (optional)
+      description: Copy the release name or ZIP filename, if you have tried it.
+    validations:
+      required: false
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows version (optional)
+      description: Settings → System → About → Windows specifications. No device ID or product ID is needed.
+    validations:
+      required: false
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Example or screenshot (optional)
+      description: A sketch or description is enough. Hide passwords, usernames, addresses, and private remote-screen content before attaching an image. Do not attach credential dialogs.
+    validations:
+      required: false

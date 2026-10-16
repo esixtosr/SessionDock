@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SessionDock.App/SessionDock.App.csproj" />
+    <Project Path="src/SessionDock.Core/SessionDock.Core.csproj" />
+    <Project Path="src/SessionDock.Infrastructure/SessionDock.Infrastructure.csproj" />
+    <Project Path="src/SessionDock.Rdp.Windows/SessionDock.Rdp.Windows.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SessionDock.Tests/SessionDock.Tests.csproj" />
+    <Project Path="tests/SessionDock.WindowsTests/SessionDock.WindowsTests.csproj" />
+  </Folder>
+</Solution>
