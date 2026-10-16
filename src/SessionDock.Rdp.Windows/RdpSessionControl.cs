@@ -206,10 +206,15 @@ public sealed class RdpSessionControl : AxHost
     public void Disconnect()
     {
         EnsureSta();
+        if (_disposed) return;
+        DisconnectCore();
+    }
+    private void DisconnectCore()
+    {
         _deliberateDisconnect = true;
         _reconnectAllowed = false;
         _resizeTimer.Stop();
-        if (_client is null) return;
+        if (!HasAttachedClient()) return;
         if (_advanced is not null) ComDispatch.TrySet(_advanced, "EnableAutoReconnect", false);
         if (State is SessionState.Disconnected or SessionState.Failed) { ClearControlPasswords(); return; }
         _nativeDisconnectPending = true;
@@ -368,6 +373,7 @@ public sealed class RdpSessionControl : AxHost
     private void ClearControlPasswords()
     {
         // Clearing credentials only after disconnect/failure preserves native reconnect semantics.
+        if (!HasAttachedClient()) return;
         using var emptyPassword = new System.Security.SecureString();
         try { if (_client is not null) NativePasswordSetter.SetDesktop(_client, emptyPassword); }
         catch (Exception ex) when (ex is COMException or NotSupportedException) { }
@@ -393,17 +399,34 @@ public sealed class RdpSessionControl : AxHost
         if (Environment.CurrentManagedThreadId != _threadId || Thread.CurrentThread.GetApartmentState() != ApartmentState.STA)
             throw new InvalidOperationException("RDP controls must be created, accessed, and disposed on the same Windows STA UI thread.");
     }
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, nameof(_client))]
+    private bool HasAttachedClient()
+    {
+        // A parent can release its child ActiveX objects before calling the child's Dispose.
+        // GetOcx only reads AxHost's current RCW; checking it never invokes a released COM object.
+        if (_client is not null && ReferenceEquals(_client, GetOcx())) return true;
+        ForgetInterfaces();
+        return false;
+    }
+    private void ForgetInterfaces()
+    {
+        _client = _advanced = _secured = _transport = null;
+        _canFullScreen = _fullScreen = _nativeDisconnectPending = false;
+    }
     protected override void Dispose(bool disposing)
     {
-        if (disposing && !_disposed)
+        if (!disposing) { base.Dispose(false); return; }
+        if (_disposed) return;
+        EnsureSta();
+        // Mark before native callbacks so reentrant or repeated disposal cannot repeat cleanup.
+        _disposed = true;
+        try { DisconnectCore(); }
+        finally
         {
-            EnsureSta();
-            Disconnect();
-            _disposed = true;
             _resizeTimer.Dispose();
+            ForgetInterfaces();
+            // AxHost owns/releases its RCW. Always let it finish, even when native cleanup fails.
+            base.Dispose(true);
         }
-        base.Dispose(disposing);
-        // AxHost owns/releases its RCW. Do not FinalReleaseComObject while event callbacks can exist.
-        if (disposing) { _client = _advanced = _secured = _transport = null; }
     }
 }

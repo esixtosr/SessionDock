@@ -50,6 +50,14 @@ internal static class Program
                 window.BeginInvoke(window.Close);
             };
             Application.Run(window);
+            // Parent close may release ActiveX before derived Dispose. These must be safe no-ops.
+            first.Disconnect();
+            second.Disconnect();
+            first.Dispose();
+            second.Dispose();
+            first.Dispose();
+            second.Dispose();
+            Console.WriteLine("PASS: parent close followed by repeated disconnect and disposal completed.");
         }
         catch (Exception ex) { Console.Error.WriteLine($"FAIL: control activation failed, HRESULT 0x{ex.HResult:X8}. No real-session test was performed."); exitCode = 1; }
         finally { first?.Dispose(); second?.Dispose(); }
