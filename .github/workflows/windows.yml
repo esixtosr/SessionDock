@@ -41,7 +41,7 @@ jobs:
         shell: powershell
         timeout-minutes: 3
         run: |
-          Expand-Archive artifacts/release/SessionDock-v0.1.0-preview.1-win-x64.zip artifacts/extracted-preview
+          Expand-Archive artifacts/release/SessionDock-v0.1.0-preview.2-win-x64.zip artifacts/extracted-preview
           ./scripts/Test-Install.ps1 -AllowDisposableRunner -BundlePath artifacts/extracted-preview/SessionDock-win-x64
       - name: Windows control and temporary credential probe (no network)
         shell: powershell

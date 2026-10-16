@@ -8,9 +8,9 @@ The idea is simple: keep your remote PCs in one place, organize them into groups
 
 ## Download and open it
 
-**[Download the Windows preview](https://github.com/esixtosr/SessionDock/releases/tag/v0.1.0-preview.1)**
+**[Download the Windows preview](https://github.com/esixtosr/SessionDock/releases/tag/v0.1.0-preview.2)**
 
-1. On the release page, download **`SessionDock-v0.1.0-preview.1-win-x64.zip`** under **Assets**. You do not need the source-code downloads to use the app.
+1. On the release page, download **`SessionDock-v0.1.0-preview.2-win-x64.zip`** under **Assets**. You do not need the source-code downloads to use the app.
 2. Right-click the ZIP and choose **Extract All**.
 3. Open the extracted folder and double-click **`SessionDock.exe`**. Keep the other files in that folder.
 4. If you want a Start menu shortcut, run **`Install.cmd`**. Installing is optional.

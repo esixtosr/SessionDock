@@ -1,8 +1,8 @@
 #requires -Version 5.1
 [CmdletBinding()]
-param([string]$Version = '0.1.0-preview.1')
+param([string]$Version = '0.1.0-preview.2')
 $ErrorActionPreference = 'Stop'
-if ($Version -notmatch '^\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?$') { throw 'Use a version such as 0.1.0-preview.1.' }
+if ($Version -notmatch '^\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?$') { throw 'Use a version such as 0.1.0-preview.2.' }
 $root = Split-Path $PSScriptRoot -Parent
 Set-Location $root
 $bundle = Join-Path $root 'artifacts/SessionDock-win-x64'

@@ -1,6 +1,6 @@
 # Changes
 
-## 0.1.0-preview.1
+## 0.1.0-preview.2
 
 First public testing preview. The goal is a Windows connection manager with a saved-PC workflow inspired by Windows App on Mac.
 

@@ -20,7 +20,7 @@ The full text specification was read. None of the 19 image files was present in 
 | 14 | Resolution presets | First part of 23 documented presets; add/remove validation |
 | 15 | Resolution continuation | Remaining documented presets and restore; existing PCs retain dimensions |
 | 16 | Credential manager | Metadata + vault-backed create/edit; masked password; blank preserves existing password |
-| 17 | Credential editing | Stable references, explicit clear and confirmed deletion; Windows vault proof pending |
+| 17 | Credential editing | Stable references, explicit clear and confirmed deletion; vault primitive passed; editor flows and image comparison pending |
 | 18 | Gateway manager | Labeled RD Gateway metadata/credentials; remove-to-direct confirmation; remote gateway proof pending |
 | 19 | Group manager | Saved Devices protected, custom create/rename/delete/reorder; delete preserves PCs |
 

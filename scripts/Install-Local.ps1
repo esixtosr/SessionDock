@@ -21,7 +21,7 @@ $uninstall = Join-Path $destination 'Uninstall-Local.ps1'
 $key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\SessionDock'
 New-Item $key -Force | Out-Null
 New-ItemProperty $key -Name DisplayName -Value 'SessionDock Preview' -PropertyType String -Force | Out-Null
-New-ItemProperty $key -Name DisplayVersion -Value '0.1.0-preview.1' -PropertyType String -Force | Out-Null
+New-ItemProperty $key -Name DisplayVersion -Value '0.1.0-preview.2' -PropertyType String -Force | Out-Null
 New-ItemProperty $key -Name Publisher -Value 'SessionDock contributors' -PropertyType String -Force | Out-Null
 New-ItemProperty $key -Name InstallLocation -Value $destination -PropertyType String -Force | Out-Null
 New-ItemProperty $key -Name UninstallString -Value ('powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + $uninstall + '"') -PropertyType String -Force | Out-Null

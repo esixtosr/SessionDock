@@ -19,7 +19,7 @@
 
 From source, use `Build-and-Test.cmd` or `scripts/Build-Windows.ps1`. Windows tooling generates wrappers from the installed Microsoft DLL and checks the adapter's ABI. No unexplained interop assemblies are downloaded. Run `scripts/Test-Engine.ps1` on an interactive Windows desktop: it activates two controls and exercises a temporary app-owned Credential Manager entry, without connecting to a host. Temporary probe credentials are deleted; no password is printed.
 
-Run `scripts/Test-UI.ps1` after publishing to exercise Add/Cancel, Save/restart persistence and the nine settings categories through Windows UI Automation. It uses an isolated temporary library, does not touch the normal library, uses `.invalid` hostnames and never presses Connect. Retained test metadata can be deleted afterward. These probes are supplied but were **not run on macOS**.
+Run `scripts/Test-UI.ps1` after publishing to exercise Add/Cancel, Save/restart persistence and the nine settings categories through Windows UI Automation. It uses an isolated temporary library, does not touch the normal library, uses `.invalid` hostnames and never presses Connect. Retained test metadata can be deleted afterward. These no-network probes passed on the recorded hosted Windows runner; see [verification](VERIFICATION.md). Repeat the relevant checks on the target Windows 11 machine.
 
 Inspect `artifacts/verification/engine-capabilities.json`, `ui-smoke.json`, `artifacts/interop/interop-manifest.json` after generation and `artifacts/TestResults/*.trx`. A no-network probe is not a successful RDP logon test.
 

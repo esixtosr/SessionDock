@@ -2,7 +2,7 @@
 
 ## Verification status
 
-The source cross-compiles for `net10.0-windows` on macOS with .NET SDK 10.0.201. Windows CI on build 26100 has generated the installed-control interop, activated two independent controls, accepted non-secret preconnection settings, and passed a temporary Credential Manager round trip. Its first run rejected both previous IDispatch password setters; the replacement native BSTR path remains pending the next Windows run. **Real login, remote input, reconnect, redirection, resizing, and packaged RDP activation are unverified. Phase 0 has not passed.** A C# build proves neither control availability nor an authenticated RDP session.
+The source cross-compiles for `net10.0-windows` with .NET SDK 10.0.201. [Windows CI run 38840477301](https://github.com/esixtosr/SessionDock/actions/runs/38840477301) on build 26100 passed installed-control interop generation, two-control activation, all 31 native option operations (including nonempty and clearing desktop/gateway password calls), temporary Credential Manager write/read/delete, and repeated disconnect/disposal after parent close. See [verification](VERIFICATION.md) for the exact revision and scope. **Real login, remote input, reconnect, redirection, resizing, and installed RDP/vault integration are unverified. Phase 0 has not passed.** Local control tests do not prove an authenticated remote session.
 
 The implementation is an integrated `AxHost` for the installed `MsRdpClient10NotSafeForScripting` class. It does not start `mstsc.exe`, implement RDP itself, or send data anywhere until the user connects an explicitly saved/import-reviewed PC. Each session owns an independent native surface. The WPF host must put toolbars outside `WindowsFormsHost`; the native child can cover WPF overlays.
 
@@ -10,7 +10,7 @@ The implementation is an integrated `AxHost` for the installed `MsRdpClient10Not
 
 `RdpSessionControl` is a small authored AxHost wrapper using documented IDispatch properties/methods and an explicitly attributed IDispatch event sink. It avoids hand-authored non-scriptable vtable layouts. Its class ID is `A0C63C30-F08D-4AB4-907C-34905D770C7D`; its event interface IID is `336D5562-EFA8-482E-8CB3-C5C0FC7A7DB6`. Both are documented by Microsoft. This design allows cross-compilation without redistributing unexplained interop DLLs.
 
-On Windows, `scripts/Generate-Interop.ps1` uses the installed, signed `%WINDIR%\System32\mstscax.dll` and Windows SDK `tlbimp.exe`/`aximp.exe` to generate `Interop.MSTSCLib.dll`, `AxInterop.MSTSCLib.dll`, source, and a local provenance manifest. It verifies the authored event DISPIDs and parameter/return types against that generated type library. The production host remains the authored wrapper. Windows builds include the generated `Interop.MSTSCLib.dll` only for safe reflection into the non-scriptable ConnectionBarText property; no non-scriptable vtable is guessed. The cross-compiled preview can attempt windowed connections without this file but explicitly disables native full screen. Wrapper generation is an outstanding Windows release gate. Generated binaries must not be downloaded from arbitrary repositories.
+On Windows, `scripts/Generate-Interop.ps1` uses the installed, signed `%WINDIR%\System32\mstscax.dll` and Windows SDK `tlbimp.exe`/`aximp.exe` to generate `Interop.MSTSCLib.dll`, `AxInterop.MSTSCLib.dll`, source, and a local provenance manifest. It verifies the authored event DISPIDs and parameter/return types against that generated type library. The production host remains the authored wrapper. Windows builds include the generated `Interop.MSTSCLib.dll` only for safe reflection into the non-scriptable ConnectionBarText property; no non-scriptable vtable is guessed. The cross-compiled preview can attempt windowed connections without this file but explicitly disables native full screen. Wrapper generation passed on the recorded Windows runner and is required in every release workflow. Generated binaries must not be downloaded from arbitrary repositories.
 
 Run from a 64-bit Windows PowerShell 5.1 terminal with the Visual Studio .NET desktop workload and .NET Framework SDK tools installed:
 
@@ -35,7 +35,7 @@ Server authentication is required (`AuthenticationLevel=1`) and CredSSP is enabl
 
 ## Current mapping and limitations
 
-All implemented engine features below are **Conditional: source implemented, Windows/host behavior unverified**. A successfully accepted setter is only a request, not evidence of host policy accepting it.
+All remote features below remain **Conditional: local Windows probes passed; remote host behavior is unverified**. A successfully accepted setter is only a request, not evidence of host policy accepting it.
 
 | Feature | Backend request | Status / acceptance still needed |
 |---|---|---|
