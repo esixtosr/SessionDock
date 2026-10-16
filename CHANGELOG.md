@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add Windows compositor capture for RDP renderers that return blank native redraws; expose preview capture status in Connection details.
+
 - Optional encrypted last-session previews with timestamps, clear control and computer illustration fallback.
 - Shorter normal connection status; detailed warnings remain visible.
 - Synthetic capture/privacy/cache and preview preference UI checks. Real RDP capture remains conditional on the installed renderer.

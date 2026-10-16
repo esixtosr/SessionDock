@@ -89,3 +89,11 @@ For each release, rerun the [Windows workflow](https://github.com/esixtosr/Sessi
 - The shorter normal sign-in status preserves detailed warning/failure messages and Connection details.
 
 - Self-contained publish passed. Isolated UI smoke passed all 5 checks, including preview default-off, opt-in persistence after restart and Clear previews disabling capture. Synthetic library/settings screenshots were visually reviewed. An initial framework-dependent UI launch timed out on the installed runtime; the self-contained build resolved it. Full local installation smoke was not run on this personal machine.
+
+## Blank RDP preview follow-up, 2026-10-16
+
+The user reported no preview after opt-in, with the enabled-setting fallback tooltip visible. The PrintWindow-only implementation did not demonstrate usable RDP rendering in that setup. Added app-window-only Windows compositor capture, strict remote-client cropping, stale-result cancellation and capture status in Connection details. The previous synthetic GDI test had passed but was not evidence of real RDP capture.
+
+Local locked restore, Release build (zero warnings/errors), 112 portable tests, self-contained publish, all five isolated UI checks, existing native/vault/storage probes and the new compositor probe passed. The compositor probe verifies actual synthetic blue/gold pixels cropped from a window, excludes a covering magenta window, and rejects a minimized window. The synthetic source title is changed while covered to trigger a new compositor frame; Windows need not supply new frames for unchanged content. A first attempted assertion that a synthetic control refusing WM_PRINT would always make PrintWindow fail was removed because Windows did not behave that way. No actual remote desktop was used.
+
+Real RDP capture after this fix, native full screen, lock/unlock, and responsiveness remain NOT VERIFIED until user testing. Windows projection references intentionally updated; bundled .NET/Windows Desktop runtime remains 10.0.13 (verified in published runtimeconfig). Published releases remain unchanged.
