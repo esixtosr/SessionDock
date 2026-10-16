@@ -28,10 +28,6 @@ jobs:
         run: dotnet build SessionDock.slnx -c Release --no-restore
       - name: Logic and persistence tests
         run: dotnet test tests/SessionDock.Tests/SessionDock.Tests.csproj -c Release --no-build --no-restore --logger trx --results-directory artifacts/TestResults
-      - name: Windows control and temporary credential probe (no network)
-        shell: powershell
-        timeout-minutes: 3
-        run: ./scripts/Test-Engine.ps1
       - name: Publish self-contained Windows preview
         run: dotnet publish src/SessionDock.App/SessionDock.App.csproj -c Release --self-contained true --no-restore -o artifacts/SessionDock-win-x64
       - name: Test published app using isolated UI Automation
@@ -41,6 +37,16 @@ jobs:
       - name: Prepare download, source, and checksums
         shell: powershell
         run: ./scripts/Package-Preview.ps1
+      - name: Check extracted download, installation, and uninstall
+        shell: powershell
+        timeout-minutes: 3
+        run: |
+          Expand-Archive artifacts/release/SessionDock-v0.1.0-preview.1-win-x64.zip artifacts/extracted-preview
+          ./scripts/Test-Install.ps1 -AllowDisposableRunner -BundlePath artifacts/extracted-preview/SessionDock-win-x64
+      - name: Windows control and temporary credential probe (no network)
+        shell: powershell
+        timeout-minutes: 3
+        run: ./scripts/Test-Engine.ps1
       - uses: actions/upload-artifact@v4
         with:
           name: SessionDock-release-files
@@ -56,4 +62,4 @@ jobs:
             artifacts/interop/*.json
           if-no-files-found: warn
 # A passing build/probe/UI check does not prove real RDP logon, device redirection,
-# Windows 11 compatibility, or installation. These remain tester acceptance checks.
+# Windows 11 compatibility, upgrades, or MSIX. These remain tester acceptance checks.

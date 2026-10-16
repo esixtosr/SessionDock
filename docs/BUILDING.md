@@ -4,6 +4,8 @@ These instructions are for contributors who want to build the application or run
 
 A successful build does not establish that RDP login, device redirection, full screen, or installation works. Record those results separately using the [Windows acceptance checklist](WINDOWS-ACCEPTANCE.md).
 
+The first recorded Windows CI run, [38838939088](https://github.com/esixtosr/SessionDock/actions/runs/38838939088) at commit `72b5448` on **2026-10-16 UTC**, passed compilation, 101 portable tests, generated event ABI checks, two-control activation, and temporary vault write/read/delete. Its native password setters failed with `0x80020003`, so publish and the application UI smoke test were not reached. A fix in progress has not yet passed a new Windows run. Follow the [verification report](VERIFICATION.md) for the recorded result of each revision.
+
 ## Requirements
 
 - A currently supported **Windows 11 x64** computer and an interactive Windows desktop. ARM64 and other client versions have separate compatibility work outstanding.
@@ -61,9 +63,9 @@ Run the control and vault probe after generating the wrapper:
 .\scripts\Test-Engine.ps1
 ```
 
-This probe activates two independent RDP controls on a Windows UI thread. It also writes, reads, and removes one temporary, application-owned Windows Credential Manager item. It does not connect to a remote host or validate keyboard input, remote resolution, redirection, or installed-package behavior. Dependency restore during the command can contact NuGet; the probe itself makes no RDP connection.
+This probe activates two independent RDP controls on a Windows UI thread, attempts the native preconnection option setters (including password handoff), and records accepted/rejected setters. It also writes, reads, and removes one temporary, application-owned Windows Credential Manager item. It does not connect to a remote host or validate keyboard input, remote resolution, redirection, or installed-package behavior. Dependency restore during the command can contact NuGet; the probe itself makes no RDP connection.
 
-Its report is `artifacts/verification/engine-capabilities.json`. A temporary credential cleanup failure is a failed probe, not a successful result.
+Its report is `artifacts/verification/engine-capabilities.json`. A rejected required setter or temporary credential cleanup failure is a failed probe. Successful activation or vault storage alone does not make the whole probe pass.
 
 After publishing the application, run the UI Automation smoke checks on an interactive desktop:
 
@@ -89,11 +91,15 @@ dotnet test tests/SessionDock.Tests/SessionDock.Tests.csproj -c Release --no-bui
 
 Portable tests exercise actual SQLite storage plus logic and pure adapter mapping. They do not call Windows Credential Manager or establish a remote session. Cross-compilation on another operating system is useful compiler evidence, but it is not Windows runtime evidence.
 
-Dependency changes should intentionally update the affected package versions and lock files. Do not remove locked restore merely to suppress an unexpected dependency change. The GitHub Actions workflow runs suitable Windows build and portable checks; a hosted build remains separate from interactive remote-session acceptance.
+Dependency changes should intentionally update the affected package versions and lock files. Do not remove locked restore merely to suppress an unexpected dependency change. The GitHub Actions workflow is configured to generate interop, compile, run portable tests and the native option/control/vault probe, publish, run isolated UI smoke checks, prepare archives/checksums, then extract the download and test its per-user installation/uninstallation. Later steps are not reached after an earlier failure. Hosted checks remain separate from interactive remote-session acceptance and Windows 11 compatibility testing.
 
 ## Installation and MSIX packaging
 
 The published folder includes `Install.cmd` for the per-user unpackaged installation workflow. Follow the [user guide](USER-GUIDE.md) and test install, upgrade, and uninstall on Windows. The existence of an installation script is not an installation result.
+
+The configured CI workflow additionally extracts the actual preview ZIP and invokes `scripts/Test-Install.ps1` with `-AllowDisposableRunner` and that extracted folder as `-BundlePath`. This is **CI-only**: the script refuses personal computers, self-hosted runners, existing SessionDock installations, and existing user-data locations. Do not bypass those checks. It uses the real per-user installation locations on a disposable GitHub-hosted Windows runner.
+
+That smoke test checks installed file hashes, the Start menu shortcut, Installed Apps registration, the installed executable's isolated UI flow, uninstall cleanup, and retention of a synthetic user-data sentinel. The sentinel is not a database or a saved credential. Reports are `artifacts/verification/install-smoke.json` and `installed-ui-smoke.json`. This path is newly configured and **has not run successfully in the recorded evidence**; the run above stopped at the earlier engine probe. It does not test upgrades, MSIX, installed RDP/vault integration, Windows 11 compatibility, or actual remote sessions.
 
 For the separate Windows Application Packaging Project:
 
@@ -114,11 +120,11 @@ Read the [MSIX packaging notes](../SessionDock.Package/README.md) before distrib
 | `src/SessionDock.Rdp.Windows` | Hosted ActiveX surface, native events, capability checks, and option mapping |
 | `src/SessionDock.App` | WPF library, four-tab PC editor, settings/managers, tray, and session windows |
 | `tests/SessionDock.Tests` | Portable logic, SQLite, import-security, and pure mapping tests |
-| `tests/SessionDock.WindowsTests` | Windows activation and temporary credential-vault probes |
+| `tests/SessionDock.WindowsTests` | Windows activation, native option-setter, and temporary credential-vault probes |
 | `SessionDock.Package` | MSIX packaging project and original application icons |
 | `scripts` | Build, interop, probes, install/uninstall, and packaging commands |
 | `artifacts` | Local build and verification outputs; excluded from Git |
 
-Build evidence includes `artifacts/windows-environment.txt`, portable test results under `artifacts/TestResults/`, and the probe reports above. Review reports before sharing: environment output and local paths can identify the test computer or account.
+The local `Build-Windows.ps1` script writes `artifacts/windows-environment.txt`; portable test results and probe reports use the paths above. CI publishes available reports as its **Windows-verification** artifact. These generated outputs are excluded from the Git source archive, and a failed early step can leave later reports absent. Review reports before sharing: environment output and local paths can identify the test computer or account.
 
 The [capability matrix](CAPABILITIES.md), [verification report](VERIFICATION.md), and [backlog](BACKLOG.md) distinguish implemented source, observed tests, unsupported features, and remaining Windows gates. Keep those distinctions when reporting a new result. Dependency notices are in [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md) and `licenses/`; the original application's licensing decision is separate from those dependency licenses.
