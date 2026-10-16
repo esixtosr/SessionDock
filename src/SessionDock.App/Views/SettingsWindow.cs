@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
@@ -40,16 +40,18 @@ internal sealed class SettingsWindow : Window
     private void Select<T>(Panel panel, string label, T value, Action<T> update) where T : struct, Enum { var combo = Ui.Combo(label, Enum.GetValues<T>(), value, panel); combo.SelectionChanged += (_, _) => Save(() => update((T)combo.SelectedItem)); }
     private void General(StackPanel panel)
     {
-        Ui.Check("Configure system HTTP proxy — unavailable", false, panel, false); Ui.Note(panel, "There are no workspace downloads. RD Gateway proxy behavior needs Windows validation; the application does not override a proxy.");
-        Ui.Check("Prefer UDP — unavailable as an application control", false, panel, false); Ui.Note(panel, "The installed RDP control negotiates transport. Ordinary RDP UDP is separate from AVD Shortpath; neither is claimed as verified here.");
-        Ui.Check("Microsoft Teams optimization — deferred", false, panel, false); Ui.Check("Send optional diagnostics — unavailable", false, panel, false); Ui.Note(panel, "No diagnostics upload service exists. Redacted event logs stay in your local application-data folder and contain profile IDs, states, and error codes; no hosts, usernames, or secrets. Never include passwords in diagnostic notes.");
-        Ui.Check("Graphics interpolation override — unavailable", false, panel, false); Ui.Check("RemoteApp high-DPI optimization — deferred", false, panel, false);
         panel.Children.Add(Ui.Text("Defaults for new PCs", 18)); Ui.Note(panel, "These defaults apply to newly created profiles. Existing PCs are unchanged. Imported RDP device settings always require explicit approval.");
         Toggle(panel, "Clipboard on new PCs", _vm.Snapshot.Settings.DefaultRedirection.Clipboard == ClipboardMode.Bidirectional, value => _vm.Snapshot.Settings.DefaultRedirection.Clipboard = value ? ClipboardMode.Bidirectional : ClipboardMode.Disabled);
         Toggle(panel, "Printer redirection on new PCs", _vm.Snapshot.Settings.DefaultRedirection.Printers, value => _vm.Snapshot.Settings.DefaultRedirection.Printers = value);
         Select(panel, "Sound for new PCs", _vm.Snapshot.Settings.DefaultRedirection.Sound, value => _vm.Snapshot.Settings.DefaultRedirection.Sound = value);
         Ui.Check("Imported folder defaults: Nothing / read-only unavailable", false, panel, false);
         panel.Children.Add(Ui.Text("Library storage", 18)); Ui.Note(panel, "The per-user database stores profile metadata. Passwords remain in Windows Credential Manager and are excluded from exports and backups."); panel.Children.Add(Ui.Button("Export application profiles…", ExportProfiles)); panel.Children.Add(Ui.Button("Import application profiles…", ImportProfiles)); panel.Children.Add(Ui.Button("Back up database…", Backup));
+        var unavailable = Ui.Stack(8);
+        Ui.Check("Configure system HTTP proxy — unavailable", false, unavailable, false); Ui.Note(unavailable, "There are no workspace downloads. RD Gateway proxy behavior needs Windows validation; the application does not override a proxy.");
+        Ui.Check("Prefer UDP — unavailable as an application control", false, unavailable, false); Ui.Note(unavailable, "The installed RDP control negotiates transport. Ordinary RDP UDP is separate from AVD Shortpath; neither is claimed as verified here.");
+        Ui.Check("Microsoft Teams optimization — deferred", false, unavailable, false); Ui.Check("Send optional diagnostics — unavailable", false, unavailable, false); Ui.Note(unavailable, "No diagnostics upload service exists. Redacted event logs stay in your local application-data folder and contain profile IDs, states, and error codes; no hosts, usernames, or secrets. Never include passwords in diagnostic notes.");
+        Ui.Check("Graphics interpolation override — unavailable", false, unavailable, false); Ui.Check("RemoteApp high-DPI optimization — deferred", false, unavailable, false);
+        panel.Children.Add(new Expander { Header = "Unavailable and planned features", Content = unavailable });
     }
     private void About(StackPanel panel)
     {

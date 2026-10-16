@@ -115,3 +115,10 @@ Inspected edwinsixtos.com in the browser and used its navy background, teal acce
 Local Release build: zero warnings/errors. Portable tests: 112 passed. Self-contained publish and eight isolated UI checks passed, including selecting Interactive through the restyled certificate dropdown and switching Light/Dark. Library, editor, About and light/dark settings captures were visually reviewed. The selection test was corrected to address the dropdown's owning automation peer rather than its separate popup wrapper, and to avoid a PowerShell Unicode label-encoding mismatch.
 
 Static text/accent contrast samples passed 4.5:1: dark muted/input 7.18, dark teal/selected 7.38, light muted/input 6.02, light teal/selected 5.38. These sample checks are not a complete accessibility audit. High contrast, Narrator, high-DPI and full keyboard traversal remain manual acceptance tasks. No real RDP session was started for the appearance update; connection configuration and capture engine are unchanged. Existing releases/tags retained.
+
+
+## Visual refinement, preview 5 (2026-10-16)
+
+Dedicated full-width search row, compact accessible card actions, 16:9 preview areas, stronger heading hierarchy and an original navigation symbol replace the acronym badge. General settings show usable defaults and storage actions first, with unsupported features retained in a collapsed expander. The native WPF CheckBox behavior and automation peer are retained under a themed template, including checked, indeterminate, disabled and keyboard-focus states.
+
+Local Release build passed with zero warnings/errors. Self-contained publish, all 112 portable tests and eight isolated UI checks passed. Synthetic library, PC editor and settings screenshots were reviewed; the checkbox opt-in, persistence and clear flow passed. A subsequent alignment-only edit extends the search field across its row. No real remote connection, full accessibility audit or personal-machine installation was performed. SessionDock storage/credential identifiers and branding are retained pending name selection; no releases or tags are changed.

@@ -60,13 +60,13 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Data.Sqlite": "[10.0.13, )",
-          "SessionDock.Core": "[0.1.0-preview.4, )"
+          "SessionDock.Core": "[0.1.0-preview.5, )"
         }
       },
       "sessiondock.rdp.windows": {
         "type": "Project",
         "dependencies": {
-          "SessionDock.Core": "[0.1.0-preview.4, )"
+          "SessionDock.Core": "[0.1.0-preview.5, )"
         }
       }
     },
