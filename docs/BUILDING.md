@@ -4,7 +4,7 @@ These instructions are for contributors who want to build the application or run
 
 A successful build does not establish that RDP login, device redirection, full screen, or installation works. Record those results separately using the [Windows acceptance checklist](WINDOWS-ACCEPTANCE.md).
 
-The first recorded Windows CI run, [38838939088](https://github.com/esixtosr/SessionDock/actions/runs/38838939088) at commit `72b5448` on **2026-10-16 UTC**, passed compilation, 101 portable tests, generated event ABI checks, two-control activation, and temporary vault write/read/delete. Its native password setters failed with `0x80020003`, so publish and the application UI smoke test were not reached. A fix in progress has not yet passed a new Windows run. Follow the [verification report](VERIFICATION.md) for the recorded result of each revision.
+The latest recorded [Windows CI run 38840477301](https://github.com/esixtosr/SessionDock/actions/runs/38840477301), commit `8a1f7c9`, passed on **2026-10-16 UTC**: compilation, **101 logic/persistence tests**, generated interop checks, two-control activation, **31 native option operations** including desktop/gateway password set and clear, vault write/read/delete, control disposal, published UI smoke (**4 checks**), fresh install/uninstall (**7 checks**), and installed UI smoke (**4 checks**). This was Windows 2025/build 26100 x64, not Windows 11 or a real remote-session test. Every distributed tag must pass its own [workflow run](https://github.com/esixtosr/SessionDock/actions/workflows/windows.yml); release notes link that exact run. Follow the [verification report](VERIFICATION.md) for exact scope and outstanding checks.
 
 ## Requirements
 
@@ -49,7 +49,7 @@ From 64-bit Windows PowerShell 5.1:
 .\scripts\Generate-Interop.ps1
 ```
 
-The script uses `%WINDIR%\System32\mstscax.dll`, checks its Windows signature, locates `tlbimp.exe` and `aximp.exe`, and generates wrappers under `artifacts/interop/`. It verifies the event identifiers and signatures against that installed type library and writes a provenance manifest.
+The script uses `%WINDIR%\System32\mstscax.dll`, checks its Windows signature, locates `tlbimp.exe` and `aximp.exe`, and generates wrappers under `artifacts/interop/`. It verifies event identifiers/signatures and native password-setter metadata against that installed type library and writes a provenance manifest.
 
 If the tools are installed outside the locations the script searches, supply their actual paths with `-TlbImpPath` and `-AxImpPath`. Do not download unexplained prebuilt interop DLLs or copy the Windows system `MsTscAx.dll` into the application bundle.
 
@@ -63,7 +63,7 @@ Run the control and vault probe after generating the wrapper:
 .\scripts\Test-Engine.ps1
 ```
 
-This probe activates two independent RDP controls on a Windows UI thread, attempts the native preconnection option setters (including password handoff), and records accepted/rejected setters. It also writes, reads, and removes one temporary, application-owned Windows Credential Manager item. It does not connect to a remote host or validate keyboard input, remote resolution, redirection, or installed-package behavior. Dependency restore during the command can contact NuGet; the probe itself makes no RDP connection.
+This probe activates two independent RDP controls on a Windows UI thread, attempts native preconnection option setters (including nonempty and clearing calls for desktop/gateway passwords), and records accepted/rejected operations. It also checks parent-window closure and repeated disconnect/disposal. It also writes, reads, and removes one temporary, application-owned Windows Credential Manager item. It does not connect to a remote host or validate keyboard input, remote resolution, redirection, or installed-package behavior. Dependency restore during the command can contact NuGet; the probe itself makes no RDP connection.
 
 Its report is `artifacts/verification/engine-capabilities.json`. A rejected required setter or temporary credential cleanup failure is a failed probe. Successful activation or vault storage alone does not make the whole probe pass.
 
@@ -91,15 +91,15 @@ dotnet test tests/SessionDock.Tests/SessionDock.Tests.csproj -c Release --no-bui
 
 Portable tests exercise actual SQLite storage plus logic and pure adapter mapping. They do not call Windows Credential Manager or establish a remote session. Cross-compilation on another operating system is useful compiler evidence, but it is not Windows runtime evidence.
 
-Dependency changes should intentionally update the affected package versions and lock files. Do not remove locked restore merely to suppress an unexpected dependency change. The GitHub Actions workflow is configured to generate interop, compile, run portable tests and the native option/control/vault probe, publish, run isolated UI smoke checks, prepare archives/checksums, then extract the download and test its per-user installation/uninstallation. Later steps are not reached after an earlier failure. Hosted checks remain separate from interactive remote-session acceptance and Windows 11 compatibility testing.
+Dependency changes should intentionally update the affected package versions and lock files. Do not remove locked restore merely to suppress an unexpected dependency change. The GitHub Actions workflow generates interop, restores/builds, runs portable tests, publishes, runs isolated UI smoke checks, prepares archives/checksums, extracts the download and tests its per-user installation/uninstallation, then runs the required native option/control/vault probe. Release artifacts are uploaded only after those checks pass; available verification reports are retained even on failure. This CI order differs from the local build script. Hosted checks remain separate from interactive remote-session acceptance and Windows 11 compatibility testing.
 
 ## Installation and MSIX packaging
 
-The published folder includes `Install.cmd` for the per-user unpackaged installation workflow. Follow the [user guide](USER-GUIDE.md) and test install, upgrade, and uninstall on Windows. The existence of an installation script is not an installation result.
+The published folder includes `Install.cmd` for the per-user unpackaged installation workflow. Follow the [user guide](USER-GUIDE.md) and test install, upgrade, and uninstall on Windows. The recorded CI run passed a fresh installation and uninstall; upgrades and Windows 11 acceptance remain outstanding.
 
 The configured CI workflow additionally extracts the actual preview ZIP and invokes `scripts/Test-Install.ps1` with `-AllowDisposableRunner` and that extracted folder as `-BundlePath`. This is **CI-only**: the script refuses personal computers, self-hosted runners, existing SessionDock installations, and existing user-data locations. Do not bypass those checks. It uses the real per-user installation locations on a disposable GitHub-hosted Windows runner.
 
-That smoke test checks installed file hashes, the Start menu shortcut, Installed Apps registration, the installed executable's isolated UI flow, uninstall cleanup, and retention of a synthetic user-data sentinel. The sentinel is not a database or a saved credential. Reports are `artifacts/verification/install-smoke.json` and `installed-ui-smoke.json`. This path is newly configured and **has not run successfully in the recorded evidence**; the run above stopped at the earlier engine probe. It does not test upgrades, MSIX, installed RDP/vault integration, Windows 11 compatibility, or actual remote sessions.
+That smoke test checks installed file hashes, the Start menu shortcut, Installed Apps registration, the installed executable's isolated UI flow, uninstall cleanup, and retention of a synthetic user-data sentinel. The sentinel is not a database or a saved credential. Reports are `artifacts/verification/install-smoke.json` and `installed-ui-smoke.json`. The recorded Windows CI run passed all **7 installation checks** and **4 installed UI checks**. It does not test upgrades, MSIX, installed RDP/vault integration, Windows 11 compatibility, or actual remote sessions.
 
 For the separate Windows Application Packaging Project:
 

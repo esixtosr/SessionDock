@@ -28,6 +28,9 @@ public sealed class MainWindow : Window
     public MainWindow(LibraryViewModel vm)
     {
         _vm = vm; Title = "SessionDock"; Width = 1200; Height = 780; MinWidth = 760; MinHeight = 520; Ui.FitToWorkArea(this);
+        // Keep the initial library entirely within the available desktop, including the taskbar inset.
+        Left = SystemParameters.WorkArea.Left + (SystemParameters.WorkArea.Width - Width) / 2;
+        Top = SystemParameters.WorkArea.Top + (SystemParameters.WorkArea.Height - Height) / 2;
         _layout.ColumnDefinitions.Add(_sidebarColumn); _layout.ColumnDefinitions.Add(new ColumnDefinition());
         var sidebar = new DockPanel { Background = Ui.Brush("PanelBrush"), Margin = new Thickness(0, 0, 12, 0) };
         sidebar.SetResourceReference(BackgroundProperty, "PanelBrush");

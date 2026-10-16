@@ -2,7 +2,7 @@
 
 SessionDock brings a saved-PC library to Windows, inspired by Windows App on macOS. This preview handles **saved PC connections only**; cloud workspaces and published apps are not available.
 
-The app has been compiled and its portable tests have run, but **Windows launch and real remote sessions still need verification**. This quick check helps establish what works.
+The app passed automated checks on a Windows test machine for opening, saving PCs, settings, and installation. **Real remote sessions and Windows 11 compatibility still need verification.** This quick check helps establish what works on your computer.
 
 Use Windows 11 x64 and a remote PC you own or have permission to access, already set up for Remote Desktop. If you do not have one ready, try steps 1–2. Setting up a remote PC may take longer than five minutes.
 
@@ -30,7 +30,7 @@ Issues are public. Replace real addresses and account names with labels such as 
 
 ## Skip these for now
 
-Selected-folder/read-only sharing, one-way clipboard, cameras, multiple monitors, remote DPI optimization, mouse swapping, and session screenshots are unavailable. Full screen needs the Windows-generated build and further validation. Installation and upgrades need separate Windows testing.
+Selected-folder/read-only sharing, one-way clipboard, cameras, multiple monitors, remote DPI optimization, mouse swapping, and session screenshots are unavailable. Full screen needs further validation. Basic installation/uninstall passed on the Windows test machine; Windows 11 installation and upgrades still need testing.
 
 Untrusted server certificates can prevent a connection. Report that result without bypassing certificate checks.
 

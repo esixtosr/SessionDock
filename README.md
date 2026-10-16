@@ -40,13 +40,13 @@ Use the account you normally use to sign in to that remote PC. If your organizat
 - Settings that stay saved, plus profile import/export and database backups.
 - An optional system-tray launcher.
 
-These features have been implemented, but a working setting or successful build does not prove every remote PC will support it. [Testing results and limitations](docs/VERIFICATION.md) explain what has actually been checked.
+Automated checks on a Windows test machine passed for the build, saved profiles, settings, password storage and handoff, and installation/uninstall. Real remote connections and Windows 11 compatibility still need testing. [Testing results and limitations](docs/VERIFICATION.md) explain exactly what has been checked.
 
 ## What is still unfinished
 
 Cloud workspaces, Windows 365, Azure Virtual Desktop, and published applications are planned for later. The focus right now is **saved PC connections**.
 
-Selected-folder sharing and read-only folders, one-way clipboard, cameras, multiple monitors, remote DPI optimization, session-only mouse swapping, and saved desktop thumbnails are not available yet. Unsupported options are labeled in the app. Full-screen support also needs the Windows-generated RDP wrapper and testing; use the resizable window if it is unavailable.
+Selected-folder sharing and read-only folders, one-way clipboard, cameras, multiple monitors, remote DPI optimization, session-only mouse swapping, and saved desktop thumbnails are not available yet. Unsupported options are labeled in the app. The preview includes the Windows-generated RDP wrapper, but full-screen behavior still needs testing; use the resizable window if it is unavailable.
 
 Server certificates are checked. If a connection fails with a certificate or sign-in error, report the error instead of expecting the app to bypass it.
 
