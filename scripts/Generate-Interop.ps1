@@ -68,6 +68,13 @@ $connectionBar = $nonScriptable.GetProperty('ConnectionBarText')
 if (-not $connectionBar -or -not $connectionBar.CanWrite -or $connectionBar.PropertyType -ne [string]) {
     throw 'The generated non-scriptable interface cannot configure ConnectionBarText.'
 }
+# Microsoft documents UIParentWindowHandle on IMsRdpClientNonScriptable2.
+$dialogType = $assembly.GetType('MSTSCLib.IMsRdpClientNonScriptable2', $true)
+$dialogParent = $dialogType.GetProperty('UIParentWindowHandle')
+if ($dialogType.GUID -ne [Guid]'17a5e535-4072-4fa4-af32-c8d0d47345e9' -or
+    -not $dialogParent -or -not $dialogParent.CanWrite -or $dialogParent.PropertyType -ne [IntPtr]) {
+    throw 'Unexpected native dialog parent interface or HWND signature.'
+}
 # Record the native setter slots from the same installed typelib for independent CI evidence.
 # Runtime discovers/validates native signatures itself and never trusts offsets from JSON.
 $passwordMetadata = @(
@@ -151,6 +158,7 @@ $manifest = [ordered]@{
     eventDispatchValidated = $true
     eventSignaturesValidated = $true
     nonScriptableConnectionBarValidated = $true
+    authenticationDialogParentValidated = $true
     passwordSetterSignaturesValidated = $true
     realLoginValidated = $false
     outputHashes = @((Get-FileHash -LiteralPath $interop -Algorithm SHA256), (Get-FileHash -LiteralPath $axinterop -Algorithm SHA256)) | Select-Object Path, Hash

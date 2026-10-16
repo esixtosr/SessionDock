@@ -25,6 +25,10 @@ public sealed class RdpSessionControl : AxHost
     private object? _client, _advanced, _secured, _transport;
     private bool _deliberateDisconnect, _reconnectAllowed, _loggedOn, _failed, _dynamicResolution;
     private bool _disposed, _startedFullScreen, _fullScreen, _canFullScreen, _usesGateway, _nativeDisconnectPending;
+    private RdpCertificatePolicy _certificatePolicy;
+    private bool _authenticationWarningPending, _authenticationWarningSeen;
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public IntPtr AuthenticationDialogParentWindow { get; set; }
     private int _generation;
     private (int Width, int Height) _pendingSize;
     private readonly List<string> _limitations = [];
@@ -46,7 +50,7 @@ public sealed class RdpSessionControl : AxHost
     public IReadOnlyList<Capability> GetCapabilityReport() =>
     [
         new("Integrated RDP lifecycle", CapabilityStatus.Conditional, $"Control {ControlVersion}; real login and remote input require interactive Windows tests."),
-        new("Server authentication and NLA", CapabilityStatus.Conditional, "Required server authentication plus CredSSP requested; certificate and bad-credential tests pending."),
+        new("Server authentication and NLA", CapabilityStatus.Conditional, "Strict server authentication by default; optional native warning prompts. CredSSP stays enabled; real certificate and bad-credential tests pending."),
         new("Full screen", _canFullScreen ? CapabilityStatus.Conditional : CapabilityStatus.Unavailable, _canFullScreen ? "Generated non-scriptable interop configured; native full screen and keyboard escape need Windows tests." : "Generated interop or ConnectionBarText setup unavailable."),
         new("Display resize and scaling", CapabilityStatus.Conditional, "Independent SmartSizing and debounced display update requests; effective host behavior unverified."),
         new("Clipboard, sound, printers, smart cards, microphone", CapabilityStatus.Conditional, "Request mapping implemented; policy, devices, and both clipboard directions need tests."),
@@ -64,7 +68,9 @@ public sealed class RdpSessionControl : AxHost
             throw new InvalidOperationException("Option probing requires an activated, disconnected control.");
         var gateway = new GatewayProfile { Host = "sessiondock-gateway-probe.invalid" };
         var profile = new ConnectionProfile { Host = "sessiondock-pc-probe.invalid", GatewayId = gateway.Id };
-        var options = RdpOptionPlan.Create(profile, gateway, 1024, 768);
+        var options = RdpOptionPlan.Create(profile, gateway, 1024, 768).ToList();
+        profile.CertificatePolicy = RdpCertificatePolicy.Interactive;
+        options.Add(RdpOptionPlan.Create(profile, gateway, 1024, 768).Single(x => x.Member == "AuthenticationLevel"));
         List<RdpOptionProbeResult> results = [];
         foreach (var option in options)
         {
@@ -158,6 +164,8 @@ public sealed class RdpSessionControl : AxHost
         _loggedOn = false;
         _failed = false;
         _reconnectAllowed = profile.AutoReconnect;
+        _certificatePolicy = profile.CertificatePolicy;
+        _authenticationWarningPending = _authenticationWarningSeen = false;
         _dynamicResolution = profile.Display.DynamicResolution;
         _startedFullScreen = profile.Display.StartFullScreen;
         _fullScreen = false;
@@ -180,6 +188,8 @@ public sealed class RdpSessionControl : AxHost
             }
             if (gateway is null && _transport is not null)
                 ComDispatch.Set(_transport, "GatewayUsageMethod", 0u);
+            if (!GeneratedInteropBridge.TrySetAuthenticationDialogParent(_client, AuthenticationDialogParentWindow != IntPtr.Zero ? AuthenticationDialogParentWindow : Handle))
+                _limitations.Add("Native dialog parenting is unavailable. Check Windows for the security dialog; no warning is automatically approved.");
             _canFullScreen = GeneratedInteropBridge.TrySetConnectionBarText(_client);
             if (!_canFullScreen) _limitations.Add("Native full screen requires the generated Windows interop wrapper and successful ConnectionBarText setup.");
             ComDispatch.Set(_client, "UserName", credentials.Username);
@@ -286,6 +296,7 @@ public sealed class RdpSessionControl : AxHost
     internal void HandleLoginComplete()
     {
         if (_deliberateDisconnect || _failed || _nativeDisconnectPending || State == SessionState.Disconnecting) { QueueDisconnect(); return; }
+        _authenticationWarningPending = false;
         _loggedOn = true;
         _failed = false;
         SetState(SessionState.Connected, "Signed in. Requested features may be restricted by remote host policy.");
@@ -294,6 +305,7 @@ public sealed class RdpSessionControl : AxHost
     internal void HandleDisconnected(int reason)
     {
         _nativeDisconnectPending = false;
+        _authenticationWarningPending = false;
         _fullScreen = false;
         _resizeTimer.Stop();
         ClearControlPasswords();
@@ -305,7 +317,9 @@ public sealed class RdpSessionControl : AxHost
         _reconnectAllowed = false;
         var message = _deliberateDisconnect ? "Disconnected. SessionDock sent no remote sign-out request."
             : clean && extended is not (2 or 12) ? "The session ended. SessionDock sent no remote sign-out request."
-            : RdpFailureDescriptions.Describe(reason, extended, _usesGateway);
+            : _authenticationWarningSeen && !_loggedOn
+                ? "Windows ended the connection without confirming sign-in after a security warning. The warning may have been cancelled or blocked by policy. Verify the server identity and certificate before manually retrying."
+                : RdpFailureDescriptions.Describe(reason, extended, _usesGateway);
         if (extended != 0) message += $" Extended reason: {extended}.";
         SetState(clean ? SessionState.Disconnected : SessionState.Failed, message, reason);
     }
@@ -333,7 +347,17 @@ public sealed class RdpSessionControl : AxHost
         if (_deliberateDisconnect || _failed || _nativeDisconnectPending) return;
         _reconnectAllowed = false;
         if (_advanced is not null) ComDispatch.TrySet(_advanced, "EnableAutoReconnect", false);
-        SetState(SessionState.Authenticating, "Windows requires a security or certificate decision. Automatic retries are stopped. Server authentication remains required.");
+        _authenticationWarningPending = _authenticationWarningSeen = true;
+        SetState(SessionState.Authenticating, _certificatePolicy == RdpCertificatePolicy.Interactive
+            ? "Windows is showing a security or certificate warning. Verify the server identity independently before proceeding; an unverified identity is a security risk. Windows policy may block access. Automatic retries are stopped."
+            : "Windows is showing a security or certificate warning. Strict mode requires successful server authentication; untrusted certificates are rejected. Automatic retries are stopped.");
+    }
+    internal void HandleAuthenticationWarningDismissed()
+    {
+        if (!_authenticationWarningPending || _deliberateDisconnect || _failed || _nativeDisconnectPending) return;
+        _authenticationWarningPending = false;
+        // Dismissal supplies no approval/cancellation result. Only native login completion is success.
+        if (!_loggedOn) SetState(SessionState.Authenticating, "Windows security warning closed. Waiting for Windows to confirm sign-in or disconnection; automatic retries remain stopped.");
     }
     internal void HandleLogonError(int code)
     {

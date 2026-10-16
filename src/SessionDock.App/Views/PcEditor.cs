@@ -13,7 +13,7 @@ internal sealed class PcEditor : Window
     private readonly ConnectionProfile _draft;
     private readonly GatewayProfile? _stagedGateway;
     private readonly TextBox _endpoint, _friendly, _width, _height;
-    private readonly ComboBox _credentials, _group, _gateway, _resolution, _color, _clipboard, _sound, _routing;
+    private readonly ComboBox _credentials, _group, _gateway, _resolution, _color, _clipboard, _sound, _routing, _certificatePolicy;
     private readonly CheckBox _bypass, _reconnect, _admin, _allMonitors, _fullscreen, _fit, _dynamic, _printers, _smartCards, _microphone;
     private readonly TextBlock _error;
     public PcEditor(Window owner, LibraryViewModel vm, ConnectionProfile? profile, GatewayProfile? stagedGateway = null)
@@ -26,6 +26,9 @@ internal sealed class PcEditor : Window
         var footer = Ui.Stack(8); DockPanel.SetDock(footer, Dock.Bottom); _error = Ui.Text("", 12); footer.Children.Add(_error); Ui.Note(footer, "Changes apply to new sessions. An open session keeps its connection-time options."); Ui.Footer(footer, Save, () => DialogResult = false); root.Children.Add(footer);
         var tabs = new TabControl { Margin = new Thickness(18, 0, 18, 0) }; root.Children.Add(tabs);
         var general = Ui.Stack(); tabs.Items.Add(new TabItem { Header = "General", Content = Ui.Scroll(general) });
+        string[] certificateChoices = ["Strict — Require a trusted server certificate (recommended).", "Interactive — Let Windows prompt when server authentication fails."];
+        _certificatePolicy = Ui.Combo("Server certificate authentication", certificateChoices, certificateChoices[(int)_draft.CertificatePolicy], general);
+        Ui.Note(general, "Interactive mode may allow a connection to a server whose identity cannot be verified. Use only with computers you trust and have independently verified. Windows security policy may still block the connection.");
         _friendly = Ui.Input("Friendly name", _draft.FriendlyName, general);
         var groups = vm.Snapshot.Groups.Select(g => new Choice(g.Id, g.Name)).ToList(); _group = Ui.Combo("Group", groups, groups.FirstOrDefault(c => c.Id == _draft.GroupId) ?? groups.First(), general);
         var gateways = new List<Choice> { new(null, "No gateway") }; gateways.AddRange(vm.Snapshot.Gateways.Select(g => new Choice(g.Id, g.Label))); if (stagedGateway is not null) gateways.Add(new Choice(stagedGateway.Id, stagedGateway.Label)); _gateway = Ui.Combo("RD Gateway", gateways, gateways.FirstOrDefault(c => c.Id == _draft.GatewayId) ?? gateways.First(), general);
@@ -64,6 +67,7 @@ internal sealed class PcEditor : Window
         {
             if (!EndpointParser.TryParse(_endpoint.Text, out var endpoint, out var error) || endpoint is null) { _error.Text = error; _endpoint.Focus(); return; }
             if (!int.TryParse(_width.Text, out var width) || !int.TryParse(_height.Text, out var height)) { _error.Text = "Resolution dimensions must be whole numbers."; return; }
+            _draft.CertificatePolicy = (RdpCertificatePolicy)_certificatePolicy.SelectedIndex;
             _draft.Host = endpoint.Host; _draft.Port = endpoint.Port; _draft.FriendlyName = _friendly.Text.Trim(); _draft.CredentialId = (_credentials.SelectedItem as Choice)?.Id; _draft.GroupId = ((Choice)_group.SelectedItem).Id ?? Group.DefaultId; _draft.GatewayId = (_gateway.SelectedItem as Choice)?.Id;
             _draft.GatewayBypass = _draft.GatewayId.HasValue && _bypass.IsChecked == true; _draft.AutoReconnect = _reconnect.IsChecked == true; _draft.AdminSession = _admin.IsChecked == true; _draft.SwapMouseButtons = false; _draft.Input.KeyboardRouting = (KeyboardRouting)_routing.SelectedItem;
             _draft.Display.AutomaticResolution = _resolution.SelectedIndex == 0; _draft.Display.Width = width; _draft.Display.Height = height; _draft.Display.UseAllMonitors = false; _draft.Display.StartFullScreen = _fullscreen.IsChecked == true; _draft.Display.FitToWindow = _fit.IsChecked == true; _draft.Display.DynamicResolution = _dynamic.IsChecked == true; _draft.Display.ColorDepth = (int)_color.SelectedItem; _draft.Display.HighDpi = false;

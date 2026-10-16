@@ -65,6 +65,7 @@ internal sealed class SessionWindow : Window
                     gateway = _vm.Snapshot.Gateways.FirstOrDefault(g => g.Id == id) ?? throw new InvalidOperationException("This profile's gateway no longer exists. Edit the PC before connecting.");
                     gatewayCredentials = ResolveCredentials(gateway.CredentialId, "RD Gateway credentials"); if (gatewayCredentials is null) { _status.Text = "Gateway authentication cancelled. No connection started."; return; }
                 }
+                _control.AuthenticationDialogParentWindow = new System.Windows.Interop.WindowInteropHelper(this).Handle;
                 _control.Connect(_profile, credentials, gateway, gatewayCredentials);
             }
             finally { gatewayCredentials?.Dispose(); }
@@ -118,7 +119,7 @@ internal sealed class SessionWindow : Window
     private void Details()
     {
         var limitations = _control?.Limitations ?? [];
-        MessageBox.Show(this, $"Control version: {_control?.ControlVersion ?? "Unavailable"}\nState: {_control?.State.ToString() ?? "Disconnected"}\n\nConnected is shown only after the native control reports completed logon. Device redirection is requested, not remotely verified.\n\n" + string.Join("\n\n", limitations), "Connection details");
+        MessageBox.Show(this, $"Endpoint: {_profile.Endpoint}\nServer certificate authentication: {_profile.CertificatePolicy}\nControl version: {_control?.ControlVersion ?? "Unavailable"}\nState: {_control?.State.ToString() ?? "Disconnected"}\n\nConnected is shown only after the native control reports completed logon. Device redirection is requested, not remotely verified.\n\n" + string.Join("\n\n", limitations), "Connection details");
     }
     private void OnClosing(object? sender, CancelEventArgs e)
     {

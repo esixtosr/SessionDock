@@ -52,7 +52,7 @@ public sealed class RdpEventSink(RdpSessionControl owner) : IRdpControlEvents
     public void OnReceivedTSPublicKey(string publicKey, ref bool continueLogon) => continueLogon = false;
     public void OnAutoReconnecting(int reason, int attemptCount, out int continueState) => continueState = owner.HandleAutoReconnect(attemptCount) ? 0 : 1;
     public void OnAuthenticationWarningDisplayed() => owner.HandleAuthenticationWarning();
-    public void OnAuthenticationWarningDismissed() { }
+    public void OnAuthenticationWarningDismissed() => owner.HandleAuthenticationWarningDismissed();
     public void OnLogonError(int code) => owner.HandleLogonError(code);
     public void OnFocusReleased(int direction) => owner.HandleFocusReleased();
     public void OnAutoReconnected() => owner.HandleAutoReconnected();

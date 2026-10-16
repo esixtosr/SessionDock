@@ -25,6 +25,12 @@ public static class RdpOptionPlan
         int height = profile.Display.AutomaticResolution ? Math.Clamp(viewportHeight, 200, 8192) : profile.Display.Height;
         if (width is < 200 or > 8192 || height is < 200 or > 8192) throw new ArgumentOutOfRangeException(nameof(profile), "RDP desktop dimensions must be 200–8192 pixels.");
         if (profile.Display.ColorDepth is not (16 or 24 or 32)) throw new ArgumentOutOfRangeException(nameof(profile), "Supported color-depth requests are 16, 24, and 32 bit.");
+        uint authenticationLevel = profile.CertificatePolicy switch
+        {
+            RdpCertificatePolicy.Strict => 1u,
+            RdpCertificatePolicy.Interactive => 2u,
+            _ => throw new ArgumentOutOfRangeException(nameof(profile), "Unsupported RDP certificate authentication policy.")
+        };
         List<RdpOption> result =
         [
             new(RdpOptionTarget.Client, "Server", profile.Host),
@@ -32,8 +38,8 @@ public static class RdpOptionPlan
             new(RdpOptionTarget.Client, "DesktopHeight", height),
             new(RdpOptionTarget.Client, "ColorDepth", profile.Display.ColorDepth),
             new(RdpOptionTarget.Advanced, "RDPPort", profile.Port),
-            // Server validation is mandatory. Never silently accept invalid/changed certificates.
-            new(RdpOptionTarget.Advanced, "AuthenticationLevel", 1u),
+            // Strict by default; optional native prompts never imply automatic approval.
+            new(RdpOptionTarget.Advanced, "AuthenticationLevel", authenticationLevel),
             new(RdpOptionTarget.Advanced, "EnableCredSspSupport", true),
             new(RdpOptionTarget.Advanced, "EnableAutoReconnect", profile.AutoReconnect),
             new(RdpOptionTarget.Advanced, "MaxReconnectAttempts", 3),

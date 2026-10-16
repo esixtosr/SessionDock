@@ -21,6 +21,26 @@ public sealed class PersistenceTests : IDisposable
         using var db = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = database, Pooling = false }.ToString());
         db.Open(); using var command = db.CreateCommand(); command.CommandText = sql; return Convert.ToInt64(command.ExecuteScalar());
     }
+    [Theory]
+    [InlineData(RdpCertificatePolicy.Strict)]
+    [InlineData(RdpCertificatePolicy.Interactive)]
+    public void CertificatePolicySurvivesRestart(RdpCertificatePolicy policy)
+    {
+        using (var store = Create()) store.SaveConnection(new() { Host = "test.invalid", CertificatePolicy = policy });
+        using var reopened = Create();
+        Assert.Equal(policy, Assert.Single(reopened.Load().Connections).CertificatePolicy);
+    }
+    [Fact]
+    public void LegacyStoredProfileDefaultsToStrictAndInvalidPolicyIsRejected()
+    {
+        using (var store = Create()) store.SaveConnection(new() { Host = "test.invalid" });
+        Sql("UPDATE connections SET payload=json_remove(payload, '$.CertificatePolicy');");
+        using var reopened = Create();
+        Assert.Equal(RdpCertificatePolicy.Strict, Assert.Single(reopened.Load().Connections).CertificatePolicy);
+        Sql("UPDATE connections SET payload=json_set(payload, '$.CertificatePolicy', 99);");
+        Assert.Throws<InvalidDataException>(() => reopened.Load());
+        Assert.Throws<ArgumentException>(() => reopened.SaveConnection(new() { Host = "test.invalid", CertificatePolicy = (RdpCertificatePolicy)99 }));
+    }
     [Fact] public void NormalFirstRunIsEmptyAndHasReferencePresets()
     {
         using var store = Create(); var library = store.Load();

@@ -12,7 +12,7 @@ Latest recorded Windows evidence: [run 38840477301](https://github.com/esixtosr/
 | Integrated RDP logon | Conditional | AxHost + MsTscAx Connect, OnLoginComplete | Control activation and desktop password set/clear passed; no remote logon attempted |
 | Multiple sessions | Conditional | One STA-owned control per window | Two controls activated and parent-close/repeated disposal passed; two authenticated remote sessions remain untested |
 | Protected password storage | Conditional | CredWriteW/ReadW/DeleteW/CredFree, scoped generic target | Temporary write/read/delete passed on Windows CI; credential editor and installed RDP/vault integration untested |
-| Certificate/NLA protection | Conditional | AuthenticationLevel=1, EnableCredSspSupport | Required setters accepted by the native probe; trusted-host behavior untested |
+| Certificate/NLA protection | Conditional | AuthenticationLevel=1 default / 2 optional, EnableCredSspSupport | Required setters accepted by the native probe; trusted-host behavior untested |
 | Automatic reconnect | Conditional | EnableAutoReconnect, OnAutoReconnecting | Mapping/state tests and preconnection setters passed; remote interruption and cancellation untested |
 | Admin session | Conditional | ConnectToAdministerServer | Native setter accepted; no privilege escalation implied; remote effect untested |
 | Fixed resolution / image scaling | Conditional | DesktopWidth/Height, SmartSizing | Mapping tests and native setters passed; remote effect untested |

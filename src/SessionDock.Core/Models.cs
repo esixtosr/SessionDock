@@ -3,6 +3,8 @@ using System.Text.Json.Serialization;
 
 namespace SessionDock.Core;
 
+public enum RdpCertificatePolicy { Strict = 0, Interactive = 1 }
+
 public enum SessionState { Disconnected, Connecting, Authenticating, Connected, Reconnecting, Disconnecting, Failed }
 public enum CapabilityStatus { Supported, Conditional, Unavailable, Deferred }
 public enum LibraryView { Grid, List }
@@ -25,6 +27,7 @@ public sealed record ConnectionProfile
     public Guid? GatewayId { get; set; }
     public bool Favorite { get; set; }
     public bool GatewayBypass { get; set; }
+    public RdpCertificatePolicy CertificatePolicy { get; set; } = RdpCertificatePolicy.Strict;
     public bool AutoReconnect { get; set; } = true;
     public bool AdminSession { get; set; }
     public bool SwapMouseButtons { get; set; }

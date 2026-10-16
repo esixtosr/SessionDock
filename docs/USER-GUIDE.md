@@ -53,3 +53,7 @@ RDP import shows a review, rejects invalid values, reports unsupported propertie
 The per-user installer copies the bundle into `%LOCALAPPDATA%\Programs\SessionDock` and creates a Start menu shortcut. Exit SessionDock before upgrading. This preview is unsigned and Windows installation behavior remains to be tested.
 
 Uninstall via Installed Apps or the installed `Uninstall-Local.ps1`. Library data and app-owned credentials are retained for reinstall. To remove saved passwords, delete their profiles in Settings before uninstalling. No startup item, firewall rule or trusted certificate is installed. MSIX has a separate packaging/acceptance path.
+
+## Server certificate authentication
+
+Strict remains the default. Optional Interactive mode uses native Windows warnings subject to policy. Read [certificate security and W11PC4-Public testing](CERTIFICATE-AUTHENTICATION.md) before enabling it.

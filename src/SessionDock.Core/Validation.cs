@@ -82,6 +82,7 @@ public static class ProfileValidator
     public static IReadOnlyList<string> Validate(ConnectionProfile profile)
     {
         var errors = new List<string>();
+        if (!Enum.IsDefined(profile.CertificatePolicy)) errors.Add("Unsupported RDP certificate authentication policy.");
         if (profile.Id == Guid.Empty) errors.Add("The connection ID is missing.");
         if (string.IsNullOrWhiteSpace(profile.Host)) errors.Add("Enter a PC name or IP address.");
         else if (!EndpointParser.TryParse(EndpointParser.Format(profile.Host, profile.Port), out _, out var endpointError)) errors.Add(endpointError!);
