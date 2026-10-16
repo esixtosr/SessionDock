@@ -57,7 +57,7 @@ internal sealed class SettingsWindow : Window
         Toggle(panel, "Quick Launcher in Windows system tray", _vm.Snapshot.Settings.TrayEnabled, value => _vm.Snapshot.Settings.TrayEnabled = value); Ui.Note(panel, "When enabled, closing the library hides it while the process and sessions stay open. Use Exit SessionDock in the tray to disconnect sessions and exit. Startup launch is not enabled.");
         Select(panel, "Appearance", _vm.Snapshot.Settings.Theme, value => { _vm.Snapshot.Settings.Theme = value; App.ApplyTheme(value); });
         Toggle(panel, "Save last-session previews", _vm.Snapshot.Settings.ScreenshotThumbnails, value => _vm.Snapshot.Settings.ScreenshotThumbnails = value);
-        Ui.Note(panel, "Off by default. Previews may contain private remote-screen content. When enabled, a small image is retained while connected and saved locally when the session ends, encrypted for your Windows account. Turning this off hides previews and stops capture; Clear previews also removes saved images and turns capture off. Captures are best effort and may be unavailable for some RDP renderers.");
+        Ui.Note(panel, "Off by default. Previews may contain private remote-screen content. When enabled, a small image is retained while connected and saved locally when the session ends, encrypted for your Windows account. Turning this off hides previews and stops capture; Clear previews also removes saved images and turns capture off. Windows may show a capture border around the session window. Capture is best effort; see Connection details for capture status.");
         panel.Children.Add(Ui.Button("Clear previews", () => Ui.Safe(this, () =>
         {
             _vm.Snapshot.Settings.ScreenshotThumbnails = false;

@@ -25,6 +25,10 @@ internal sealed class SessionWindow : Window
     private Rect _savedBounds;
     private readonly DispatcherTimer _previewTimer = new() { Interval = TimeSpan.FromSeconds(5) };
     private SavedPreview? _lastPreview;
+    private WindowPreviewCapture? _windowCapture;
+    private bool _captureBusy;
+    private int _captureGeneration;
+    private string _previewStatus = "Previews are off.";
     private string _lastStatusMessage = "";
     private bool _previewWarningShown;
     public SessionWindow(LibraryViewModel vm, ConnectionProfile profile)
@@ -37,11 +41,11 @@ internal sealed class SessionWindow : Window
         toolbar.Children.Add(Ui.Button("Remote security keys…", () => MessageBox.Show(this, "Focus the remote desktop and press Ctrl+Alt+End to open its Windows security screen. Automated key injection is unavailable.", "Remote security keys")));
         toolbar.Children.Add(Ui.Button("Connection details", Details)); root.Children.Add(toolbar);
         var statusPanel = new StackPanel { Margin = new Thickness(12, 4, 12, 8) }; statusPanel.Children.Add(_status); _status.ToolTip = "Open Connection details for host-policy limits and diagnostics."; DockPanel.SetDock(statusPanel, Dock.Bottom); root.Children.Add(statusPanel); root.Children.Add(_host); Content = root;
-        _previewTimer.Tick += (_, _) => CapturePreview();
+        _previewTimer.Tick += async (_, _) => await CapturePreviewAsync();
         _vm.Changed += OnLibraryChanged;
         Loaded += (_, _) => Initialize(); Closing += OnClosing; Closed += (_, _) =>
         {
-            _previewTimer.Stop(); _vm.Changed -= OnLibraryChanged; ForgetPreview();
+            StopPreviewCapture(); _vm.Changed -= OnLibraryChanged; ForgetPreview();
             if (_control is not null) _control.StateChanged -= OnStateChanged;
             try { _host.Child = null; } catch (Exception) { }
             try { _control?.Dispose(); } catch (Exception) { }
@@ -75,7 +79,7 @@ internal sealed class SessionWindow : Window
                     gateway = _vm.Snapshot.Gateways.FirstOrDefault(g => g.Id == id) ?? throw new InvalidOperationException("This profile's gateway no longer exists. Edit the PC before connecting.");
                     gatewayCredentials = ResolveCredentials(gateway.CredentialId, "RD Gateway credentials"); if (gatewayCredentials is null) { _status.Text = "Gateway authentication cancelled. No connection started."; return; }
                 }
-                ForgetPreview();
+                StopPreviewCapture(); ForgetPreview();
                 _control.AuthenticationDialogParentWindow = new System.Windows.Interop.WindowInteropHelper(this).Handle;
                 _control.Connect(_profile, credentials, gateway, gatewayCredentials);
             }
@@ -97,8 +101,8 @@ internal sealed class SessionWindow : Window
     {
         _lastStatusMessage = e.Message;
         _status.ToolTip = e.Message;
-        if (e.State == SessionState.Connected && _vm.Snapshot.Settings.ScreenshotThumbnails) _previewTimer.Start();
-        else _previewTimer.Stop();
+        if (e.State == SessionState.Connected && _vm.Snapshot.Settings.ScreenshotThumbnails) StartPreviewCapture();
+        else StopPreviewCapture();
         if (e.State is SessionState.Disconnected or SessionState.Failed) SavePreview();
         _status.Text = e.State == SessionState.Connected && e.Message == "Signed in. Requested features may be restricted by remote host policy." ? "Connected · Host policies may limit features." : $"{e.State}: {e.Message}" + (e.Code is { } code ? $" (code {code})" : ""); _vm.SetSessionState(_profile.Id, e.State, e.Message, e.Code);
         _connect.IsEnabled = e.State is SessionState.Disconnected or SessionState.Failed; _disconnect.IsEnabled = e.State is SessionState.Connecting or SessionState.Authenticating or SessionState.Connected or SessionState.Reconnecting; _fullscreen.IsEnabled = e.State == SessionState.Connected && _control?.CanFullScreen == true;
@@ -108,15 +112,52 @@ internal sealed class SessionWindow : Window
     }
     private void OnLibraryChanged(object? sender, EventArgs e)
     {
-        if (!_vm.Snapshot.Settings.ScreenshotThumbnails) { _previewTimer.Stop(); ForgetPreview(); }
-        else if (_control?.State == SessionState.Connected) _previewTimer.Start();
+        if (!_vm.Snapshot.Settings.ScreenshotThumbnails) { StopPreviewCapture(); ForgetPreview(); _previewStatus = "Previews are off."; }
+        else if (_control?.State == SessionState.Connected) StartPreviewCapture();
     }
-    private void CapturePreview()
+    private void StartPreviewCapture()
     {
-        if (!_vm.Snapshot.Settings.ScreenshotThumbnails || _control?.State != SessionState.Connected || WindowState == WindowState.Minimized) return;
-        var png = RdpPreviewCapture.TryCapture(_control);
-        if (png is null) return;
-        ForgetPreview(); _lastPreview = new(DateTimeOffset.UtcNow, png);
+        if (_windowCapture is null)
+        {
+            try
+            {
+                _windowCapture = new WindowPreviewCapture(new System.Windows.Interop.WindowInteropHelper(this).Handle);
+                _previewStatus = "Windows window capture started; waiting for a usable remote image.";
+            }
+            catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or NotSupportedException or ArgumentException or InvalidOperationException)
+            { _previewStatus = $"Windows window capture unavailable (0x{ex.HResult:X8}); trying native rendering."; }
+        }
+        _previewTimer.Start();
+    }
+    private void StopPreviewCapture()
+    {
+        _previewTimer.Stop(); _captureGeneration++;
+        var capture = _windowCapture; _windowCapture = null;
+        try { capture?.Dispose(); }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or ObjectDisposedException)
+        { _previewStatus = "Window capture stopped; native cleanup was unavailable."; }
+    }
+    private async System.Threading.Tasks.Task CapturePreviewAsync()
+    {
+        if (_captureBusy || !_vm.Snapshot.Settings.ScreenshotThumbnails || _control?.State != SessionState.Connected || WindowState == WindowState.Minimized) return;
+        _captureBusy = true;
+        int generation = _captureGeneration;
+        byte[]? png = null;
+        try
+        {
+            if (_windowCapture is not null) png = await _windowCapture.TryCaptureAsync(_control);
+            if (generation != _captureGeneration || !_vm.Snapshot.Settings.ScreenshotThumbnails || _control.IsDisposed || _control.State != SessionState.Connected)
+            { if (png is not null) CryptographicOperations.ZeroMemory(png); return; }
+            png ??= RdpPreviewCapture.TryCapture(_control);
+            if (generation != _captureGeneration || !_vm.Snapshot.Settings.ScreenshotThumbnails || _control.State != SessionState.Connected)
+            { if (png is not null) CryptographicOperations.ZeroMemory(png); return; }
+            if (png is null) { _previewStatus = "No usable remote image received yet. Keep the session visible for a few seconds; the previous preview is retained."; return; }
+            ForgetPreview(); _lastPreview = new(DateTimeOffset.UtcNow, png);
+            _previewStatus = "Preview captured at " + _lastPreview.CapturedAt.ToLocalTime().ToString("T") + "; saved when this session ends.";
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or InvalidOperationException or ArgumentException or NotSupportedException or System.IO.IOException)
+        { if (generation == _captureGeneration) _previewStatus = $"Preview capture unavailable (0x{ex.HResult:X8}). The connection is unaffected."; }
+        finally { _captureBusy = false; }
     }
     private void ForgetPreview()
     {
@@ -129,7 +170,7 @@ internal sealed class SessionWindow : Window
         try
         {
             if (_vm.Snapshot.Settings.ScreenshotThumbnails && _vm.Snapshot.Connections.Any(p => p.Id == _profile.Id))
-            { _vm.Previews.Save(_profile.Id, _lastPreview); _vm.PreviewChanged(); }
+            { _vm.Previews.Save(_profile.Id, _lastPreview); _previewStatus = "Last-session preview saved."; _vm.PreviewChanged(); }
         }
         catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or Win32Exception or ArgumentException)
         {
@@ -139,7 +180,13 @@ internal sealed class SessionWindow : Window
     }
     private void DisconnectWithPreview()
     {
-        CapturePreview(); SavePreview(); _control?.Disconnect();
+        // A synchronous final native redraw may work; otherwise retain the last compositor sample.
+        if (_lastPreview is null && _vm.Snapshot.Settings.ScreenshotThumbnails && _control?.State == SessionState.Connected && WindowState != WindowState.Minimized)
+        {
+            var png = RdpPreviewCapture.TryCapture(_control);
+            if (png is not null) { ForgetPreview(); _lastPreview = new(DateTimeOffset.UtcNow, png); }
+        }
+        StopPreviewCapture(); SavePreview(); _control?.Disconnect();
     }
     private void ResizeRemote()
     {
@@ -170,7 +217,7 @@ internal sealed class SessionWindow : Window
     private void Details()
     {
         var limitations = _control?.Limitations ?? [];
-        MessageBox.Show(this, $"Endpoint: {_profile.Endpoint}\nServer certificate authentication: {_profile.CertificatePolicy}\nControl version: {_control?.ControlVersion ?? "Unavailable"}\nState: {_control?.State.ToString() ?? "Disconnected"}\nLast status: {_lastStatusMessage}\n\nConnected is shown only after the native control reports completed logon. Device redirection is requested, not remotely verified.\n\n" + string.Join("\n\n", limitations), "Connection details");
+        MessageBox.Show(this, $"Endpoint: {_profile.Endpoint}\nServer certificate authentication: {_profile.CertificatePolicy}\nControl version: {_control?.ControlVersion ?? "Unavailable"}\nState: {_control?.State.ToString() ?? "Disconnected"}\nLast status: {_lastStatusMessage}\nPreview capture: {_previewStatus}\n\nConnected is shown only after the native control reports completed logon. Device redirection is requested, not remotely verified.\n\n" + string.Join("\n\n", limitations), "Connection details");
     }
     private void OnClosing(object? sender, CancelEventArgs e)
     {

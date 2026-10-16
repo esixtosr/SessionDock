@@ -11,6 +11,7 @@ Redistributed dependencies retain their upstream licenses and copyright notices.
 | Microsoft.Data.Sqlite / Core | 10.0.13 | MIT; [dotnet/efcore](https://github.com/dotnet/efcore) |
 | SQLitePCLRaw core, provider, bundle and native library package | 2.1.13 | Apache-2.0 package license; [SQLitePCL.raw](https://github.com/ericsink/SQLitePCL.raw) |
 | SQLite engine | Native library from SQLitePCLRaw.lib.e_sqlite3 | SQLite is public domain; [SQLite copyright](https://www.sqlite.org/copyright.html) |
+| Windows SDK .NET projections (Windows.SDK.NET / WinRT.Runtime) | SDK pack 10.0.19041.57 | Microsoft Windows SDK terms; [SDK license](https://aka.ms/WinSDKLicenseURL), [C#/WinRT source](https://github.com/microsoft/CsWinRT) |
 | Microsoft RDP ActiveX control | Installed Windows version | Windows component, governed by Microsoft's Windows terms; `MsTscAx.dll` is **not redistributed** |
 
 Windows interop wrappers are generated locally from the installed system type library. They are not downloaded from third-party binaries. The macOS-produced preview has no generated interop DLL; the Windows build creates and validates it. Do not include the system MsTscAx.dll in a release bundle.
