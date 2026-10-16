@@ -29,7 +29,7 @@ Latest recorded Windows evidence: [run 38840477301](https://github.com/esixtosr/
 | Selected folders / read-only | Unavailable | No folder backend; drive redirection forced off | No broader drive access substituted |
 | Session mouse swap | Unavailable | No global SwapMouseButton call | Session-local mechanism still needed |
 | Multi-monitor / remote DPI | Unavailable | Requires non-scriptable interface + Windows/host proof | Disabled; ordinary local DPI layout still needs QA |
-| Thumbnails | Unavailable | Original static fallback cards only | No screen capture API called |
+| Thumbnails | Conditional, opt-in | Native-control-only PrintWindow; bounded images, encrypted per-user cache, timestamped cards and fallback art | Synthetic overlap/storage probe passed locally; real RDP renderers need testing |
 | Tray launcher | Conditional | Native NotifyIcon | Source compiled; tray/exit test needed |
 | Global launcher hotkey / startup | Unavailable | Not registered | No decorative enabled controls |
 | Theme, high contrast and accessibility | Conditional | Native system resources, semantic labels | Limited UIA and settings readability checks passed; accessibility, high contrast and DPI acceptance outstanding |

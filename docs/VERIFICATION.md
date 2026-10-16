@@ -58,7 +58,7 @@ The project began without an existing application repository. The full text spec
 ## Remaining limitations
 
 - No successful RDP authentication or remote feature has been demonstrated. Windows interop, native password handoff, and credential storage now have local Windows probe evidence, but remote credentials, certificates, event sequences, and installed RDP/vault integration remain unverified.
-- Exact folder-only sharing/read-only enforcement, directional clipboard, mouse swap, cameras, multi-monitor, remote DPI negotiation, session screenshots, hotkey/startup, interpolation/UDP/proxy overrides, and automatic injected Ctrl+Alt+Delete are unavailable. Native Ctrl+Alt+End is documented. No whole-drive sharing substitutes for selected-folder access.
+- Exact folder-only sharing/read-only enforcement, directional clipboard, mouse swap, cameras, multi-monitor, remote DPI negotiation, hotkey/startup, interpolation/UDP/proxy overrides, and automatic injected Ctrl+Alt+Delete are unavailable. Native Ctrl+Alt+End is documented. No whole-drive sharing substitutes for selected-folder access.
 - Certificate authentication defaults to Strict; optional per-PC Interactive delegates warnings to Windows; an untrusted or mismatched lab certificate can be rejected. No automatic trust bypass is supplied. Certificate behavior during actual connections remains untested.
 - Smart cards/printers/microphone/clipboard/audio/gateway/admin/display options are requests subject to host policy. A checked control or accepted setter is not proof of a remote effect.
 - WPF/WinForms airspace, keyboard routing, DPI, focus, full-screen exit, high contrast, and accessibility still require interactive tests. Work-area clamping and scrolling exist; the single settings capture and UI smoke are not a complete visual/accessibility pass.
@@ -79,3 +79,13 @@ For each release, rerun the [Windows workflow](https://github.com/esixtosr/Sessi
 - Real RDP matrix, in both modes: trusted certificate, self-signed, hostname mismatch, changed certificate, invalid credentials, unreachable host, deliberately cancelled connection: **NOT VERIFIED**. No authorized test server/account supplied. Unit tests and accepted setters do not prove real certificate authentication.
 - UI automation, self-contained publish, installation and MSIX not run for this change. Earlier evidence applies only to its recorded revision.
 - Published releases/tags, machine-wide policies and existing credentials unchanged.
+
+## Last-session preview implementation: local results, 2026-10-16
+
+- Release solution build: passed with zero warnings/errors. Existing unit tests: 112 passed, zero failed/skipped.
+- No-network Windows probe passed on build 26200 / control 10.0.26100: synthetic control capture/bounds, blank and hidden rejection, identical control pixels under a covering magenta test window, DPAPI cache reload with timestamp, separate profile deletion, corrupt-cache fallback and clear. Existing activation, 32 native option operations, temporary vault deletion and disposal checks also passed. Synthetic patterns are not real remote desktops.
+- Real RDP capture, loss/close frame timing, native full screen, minimized/locked behavior, and responsiveness: NOT VERIFIED. A renderer returning blank output retains the previous preview or illustration.
+- User previously reported successful real Interactive logins, restart persistence, multiple sessions, correct disconnect behavior and everyday controls in their setup. Certificate-warning cancellation was not exercised because no warning appeared; this remains unverified.
+- The shorter normal sign-in status preserves detailed warning/failure messages and Connection details.
+
+- Self-contained publish passed. Isolated UI smoke passed all 5 checks, including preview default-off, opt-in persistence after restart and Clear previews disabling capture. Synthetic library/settings screenshots were visually reviewed. An initial framework-dependent UI launch timed out on the installed runtime; the self-contained build resolved it. Full local installation smoke was not run on this personal machine.

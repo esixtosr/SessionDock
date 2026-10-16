@@ -51,7 +51,7 @@ Exit: real-session and installed results plus a proven plan for each parity gap.
 | ID | Work | Exit evidence | Status |
 |---|---|---|---|
 | P01 | Inspect and compare all 19 screenshots | Per-image differences in SCREENSHOT-MATRIX.md and side-by-side Windows captures | BLOCKED: images not supplied in accessible files |
-| P02 | Cache-only remote-surface thumbnails | No local desktop pixels under overlap/minimize; opt-in and complete deletion | OPEN; disabled with fallback cards |
+| P02 | Cache-only remote-surface thumbnails | No local desktop pixels under overlap/minimize; opt-in and complete deletion | IMPLEMENTED, conditional; synthetic overlap/privacy/storage probe passed; real RDP rendering and full-screen/minimize acceptance pending |
 | P03 | Tray, local notices, theme, full-screen bar | Exit behavior with active sessions; no fake updater; contrast/scaling checks | SOURCE for available options; Windows tests required |
 | P04 | Exact folders/read-only, directional clipboard, session mouse swap | E06 proof plus backend implementation and UI tests | OPEN parity gates |
 | P05 | Responsiveness and native accessibility | 1280×720; text/display scaling; Narrator; high contrast; substantial sample library | OPEN Windows validation |

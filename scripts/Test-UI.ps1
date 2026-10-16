@@ -229,8 +229,32 @@ try {
         if (-not $item) { throw "Missing settings category '$category'." }
         $item.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
     }
+    $personalization = Find-Element $settings 'Personalization' ([System.Windows.Automation.ControlType]::ListItem)
+    $personalization.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+    $previewToggle = Find-Element $settings 'Save last-session previews' ([System.Windows.Automation.ControlType]::CheckBox)
+    if (-not $previewToggle) { throw 'Preview opt-in setting is missing.' }
+    $toggle = $previewToggle.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)
+    if ($toggle.Current.ToggleState -ne [System.Windows.Automation.ToggleState]::Off) { throw 'Preview capture must default to off.' }
+    $toggle.Toggle()
     Invoke-Button $settings 'Done'
     $report.tests += @{name='Nine settings categories accessible';result='Passed'}
+    Stop-TestApp (Wait-Window 'SessionDock')
+    $main = Start-TestApp
+    Invoke-Button $main 'Settings'
+    $settings = Wait-Window 'SessionDock Settings'
+    $personalization = Find-Element $settings 'Personalization' ([System.Windows.Automation.ControlType]::ListItem)
+    $personalization.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+    $previewToggle = Find-Element $settings 'Save last-session previews' ([System.Windows.Automation.ControlType]::CheckBox)
+    if ($previewToggle.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Current.ToggleState -ne [System.Windows.Automation.ToggleState]::On) { throw 'Preview opt-in did not survive restart.' }
+    Invoke-Button $settings 'Clear previews'
+    $notice = Wait-Window 'Previews cleared'
+    Invoke-Button $notice 'OK'
+    $settings = Wait-Window 'SessionDock Settings'
+    $previewToggle = Find-Element $settings 'Save last-session previews' ([System.Windows.Automation.ControlType]::CheckBox)
+    if ($previewToggle.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Current.ToggleState -ne [System.Windows.Automation.ToggleState]::Off) { throw 'Clear previews did not disable capture.' }
+    Save-AppScreenshot $settings 'settings'
+    Invoke-Button $settings 'Done'
+    $report.tests += @{name='Preview defaults off, opt-in persists, clear disables capture';result='Passed'}
     Stop-TestApp (Wait-Window 'SessionDock')
     $report.status='Passed'
     'UI smoke checks passed. No remote connection was attempted. DPI, Narrator, remote keys and installation still require manual tests.'

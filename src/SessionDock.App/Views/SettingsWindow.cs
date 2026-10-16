@@ -56,7 +56,17 @@ internal sealed class SettingsWindow : Window
         Select(panel, "Library view", _vm.Snapshot.Settings.View, value => _vm.Snapshot.Settings.View = value); Select(panel, "Card size", _vm.Snapshot.Settings.CardSize, value => _vm.Snapshot.Settings.CardSize = value); Toggle(panel, "Group PC connections", _vm.Snapshot.Settings.GroupConnections, value => _vm.Snapshot.Settings.GroupConnections = value);
         Toggle(panel, "Quick Launcher in Windows system tray", _vm.Snapshot.Settings.TrayEnabled, value => _vm.Snapshot.Settings.TrayEnabled = value); Ui.Note(panel, "When enabled, closing the library hides it while the process and sessions stay open. Use Exit SessionDock in the tray to disconnect sessions and exit. Startup launch is not enabled.");
         Select(panel, "Appearance", _vm.Snapshot.Settings.Theme, value => { _vm.Snapshot.Settings.Theme = value; App.ApplyTheme(value); });
-        Ui.Check("Show last-session screenshots in thumbnails — unavailable", false, panel, false); Ui.Note(panel, "Only fallback images are shown. Capturing the ActiveX surface has not passed privacy and obscured-window checks; no screenshots are captured."); panel.Children.Add(Ui.Button("Delete stored screenshots", () => Ui.Safe(this, () => { var cache = Path.Combine(_vm.DataDirectory, "thumbnails"); if (Directory.Exists(cache)) foreach (var path in Directory.EnumerateFiles(cache)) File.Delete(path); _vm.Store.DeleteThumbnailMetadata(); MessageBox.Show(this, "Stored thumbnail files have been removed. Future capture is unavailable and remains disabled."); })));
+        Toggle(panel, "Save last-session previews", _vm.Snapshot.Settings.ScreenshotThumbnails, value => _vm.Snapshot.Settings.ScreenshotThumbnails = value);
+        Ui.Note(panel, "Off by default. Previews may contain private remote-screen content. When enabled, a small image is retained while connected and saved locally when the session ends, encrypted for your Windows account. Turning this off hides previews and stops capture; Clear previews also removes saved images and turns capture off. Captures are best effort and may be unavailable for some RDP renderers.");
+        panel.Children.Add(Ui.Button("Clear previews", () => Ui.Safe(this, () =>
+        {
+            _vm.Snapshot.Settings.ScreenshotThumbnails = false;
+            _vm.SaveSettings(); // Notify open sessions first so no buffered image can be saved again.
+            _vm.Previews.Clear(); _vm.Store.DeleteThumbnailMetadata();
+            _vm.PreviewChanged(); Navigate(_current);
+            MessageBox.Show(this, "Saved previews cleared. Capture is off; enable Save last-session previews to resume.", "Previews cleared");
+        })));
+
         Ui.Note(panel, "Cloud PCs, Azure Virtual Desktop, Remote Desktop Services feeds, and App view options are deferred. PC Connections is the only current library category.");
     }
     private void FullScreen(StackPanel panel)
@@ -151,7 +161,7 @@ internal sealed class SettingsWindow : Window
         imported.Settings.DefaultRedirection.Cameras = false; imported.Settings.DefaultRedirection.RedirectFolders = false; imported.Settings.DefaultRedirection.Folders.Clear();
         var backupDirectory = Path.Combine(_vm.DataDirectory, "backups"); Directory.CreateDirectory(backupDirectory);
         var backup = Path.Combine(backupDirectory, "before-import-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-ffff") + ".db");
-        _vm.Store.CreateBackup(backup); _vm.Store.ReplaceLibrary(imported); _vm.Reload(); App.ApplyTheme(imported.Settings.Theme); Navigate(_current);
+        _vm.Store.CreateBackup(backup); _vm.Store.ReplaceLibrary(imported); _vm.Reload(); _vm.Previews.Clear(); App.ApplyTheme(imported.Settings.Theme); Navigate(_current);
         MessageBox.Show(this, "Library replaced. Re-enter passwords before connecting. A backup was saved to:\n" + backup);
     });
     private void Backup() => Ui.Safe(this, () => { var file = new SaveFileDialog { Filter = "SQLite backup (*.db)|*.db", FileName = "SessionDock-backup.db" }; if (file.ShowDialog(this) == true) { _vm.Store.CreateBackup(file.FileName); MessageBox.Show(this, "Database backup created. Saved passwords are not included."); } });
