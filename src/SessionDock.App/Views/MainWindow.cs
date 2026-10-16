@@ -4,6 +4,8 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Security.Cryptography;
 using Microsoft.Win32;
 using SessionDock.App.ViewModels;
 using SessionDock.Core;
@@ -55,7 +57,7 @@ public sealed class MainWindow : Window
     private static MenuItem Item(string title, Action action) { var item = new MenuItem { Header = title }; item.Click += (_, _) => action(); return item; }
     private void Refresh()
     {
-        _heading.Text = _section; _count.Text = "Native RDP prototype • Windows behavior requires validation • " + _sessions.Count + " session window(s)";
+        _heading.Text = _section; _count.Text = "SessionDock Preview · " + _sessions.Count + " session window(s)";
         if (_section == "Apps") { var future = Ui.Stack(24); future.Children.Add(Ui.Text("Published applications are planned", 22)); Ui.Note(future, "SessionDock currently manages saved PC connections. Cloud workspaces, Azure Virtual Desktop, Windows 365, and published RemoteApps are deferred."); _content.Content = future; return; }
         var profiles = _vm.Filtered().ToList();
         if (profiles.Count == 0) { var empty = Ui.Stack(24); empty.Children.Add(Ui.Text(string.IsNullOrWhiteSpace(_vm.Query) ? (_section == "Favorites" ? "No favorites yet" : "Add your first PC") : "No matching PCs", 22)); Ui.Note(empty, "Save an authorized remote PC to connect. No example machines or credentials are added."); empty.Children.Add(Ui.Button("Add PC", () => Edit(null))); _content.Content = empty; return; }
@@ -80,7 +82,8 @@ public sealed class MainWindow : Window
         foreach (var profile in profiles)
         {
             var state = _vm.State(profile.Id); var content = new StackPanel();
-            var preview = new Border { Height = (width - 24) * .625, CornerRadius = new CornerRadius(6), Background = Ui.Brush("InputBrush"), Child = new TextBlock { Text = "▣", FontSize = 54, Foreground = Ui.Brush("MutedBrush"), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center } };
+            var preview = Preview(profile.Id, (width - 24) * .625);
+
             content.Children.Add(preview); var top = new DockPanel(); var favorite = Ui.Button(profile.Favorite ? "★" : "☆", () => ToggleFavorite(profile)); AutomationProperties.SetName(favorite, profile.Favorite ? "Remove favorite" : "Add favorite"); favorite.ToolTip = "Favorite"; DockPanel.SetDock(favorite, Dock.Right); top.Children.Add(favorite);
             var ellipsis = Ui.Button("···", () => { }); ellipsis.Click += (_, _) => { ellipsis.ContextMenu = Actions(profile); ellipsis.ContextMenu.PlacementTarget = ellipsis; ellipsis.ContextMenu.IsOpen = true; }; AutomationProperties.SetName(ellipsis, "Connection actions"); DockPanel.SetDock(ellipsis, Dock.Right); top.Children.Add(ellipsis); top.Children.Add(Ui.Text("PC Connection", 11, "MutedBrush")); content.Children.Add(top);
             content.Children.Add(Ui.Text(profile.DisplayName, 18)); content.Children.Add(Ui.Text(_vm.CredentialLabel(profile.CredentialId), 12, "MutedBrush")); content.Children.Add(Ui.Text(state.ToString(), 12, state == SessionState.Connected ? "AccentBrush" : "MutedBrush"));
@@ -89,6 +92,36 @@ public sealed class MainWindow : Window
             card.MouseLeftButtonDown += (_, e) => { if (InsideButton(e.OriginalSource as DependencyObject)) return; if (_selectedCard is not null && _selected is { } oldId && _vm.State(oldId) != SessionState.Connected) _selectedCard.BorderBrush = Ui.Brush("InputBrush"); _selected = profile.Id; _selectedCard = card; card.Focus(); card.BorderBrush = Ui.Brush("AccentBrush"); if (e.ClickCount == 2) Connect(profile); }; card.KeyDown += (_, e) => { if (e.Key == Key.Enter) { Connect(profile); e.Handled = true; } }; wrap.Children.Add(card);
         }
         return wrap;
+    }
+    private Border Preview(Guid id, double height)
+    {
+        var frame = new Border { Height = height, CornerRadius = new CornerRadius(6), Background = Ui.Brush("InputBrush"), ClipToBounds = true };
+        var fallback = new Grid();
+        var monitor = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        monitor.Children.Add(new Border { Width = 74, Height = 46, BorderBrush = Ui.Brush("MutedBrush"), BorderThickness = new Thickness(3), CornerRadius = new CornerRadius(4), Child = new Border { Margin = new Thickness(6), Background = Ui.Brush("PanelBrush") } });
+        monitor.Children.Add(new Border { Width = 4, Height = 9, Background = Ui.Brush("MutedBrush") });
+        monitor.Children.Add(new Border { Width = 32, Height = 3, Background = Ui.Brush("MutedBrush"), CornerRadius = new CornerRadius(2) });
+        fallback.Children.Add(monitor); frame.Child = fallback;
+        frame.ToolTip = _vm.Snapshot.Settings.ScreenshotThumbnails ? "No saved preview yet. A usable remote image is saved when a signed-in session ends; some renderers cannot provide one." : "Previews are off. Enable Save last-session previews in Settings → Personalization.";
+        AutomationProperties.SetName(frame, "Computer illustration; no saved preview");
+        if (!_vm.Snapshot.Settings.ScreenshotThumbnails) return frame;
+        var saved = _vm.Previews.Load(id);
+        if (saved is null) return frame;
+        try
+        {
+            using var stream = new MemoryStream(saved.Png);
+            var bitmap = new BitmapImage(); bitmap.BeginInit(); bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.DecodePixelWidth = 480; bitmap.StreamSource = stream; bitmap.EndInit(); bitmap.Freeze();
+            var grid = new Grid(); grid.Children.Add(new Image { Source = bitmap, Stretch = Stretch.Uniform });
+            string label = "Last session · " + saved.CapturedAt.ToLocalTime().ToString("g");
+            grid.Children.Add(new Border { VerticalAlignment = VerticalAlignment.Bottom, Background = new SolidColorBrush(Color.FromArgb(220, 24, 28, 28)), Padding = new Thickness(5), Child = new TextBlock { Text = label, FontSize = 10, Foreground = Brushes.White, TextWrapping = TextWrapping.Wrap } });
+            frame.Child = grid; frame.ToolTip = label + ". Saved image, not a live view.";
+            AutomationProperties.SetName(frame, label + "; saved image, not a live view");
+        }
+        catch (Exception ex) when (ex is IOException or NotSupportedException or ArgumentException or System.Runtime.InteropServices.COMException)
+        { /* Corrupt or unsupported image retains the illustration. */ }
+        finally { CryptographicOperations.ZeroMemory(saved.Png); }
+        return frame;
     }
     private void ShowList(List<ConnectionProfile> profiles)
     {
@@ -122,7 +155,7 @@ public sealed class MainWindow : Window
     private ContextMenu Actions(ConnectionProfile profile)
     {
         var menu = new ContextMenu(); menu.Items.Add(Item(_sessions.ContainsKey(profile.Id) ? "Focus session" : "Connect", () => Connect(profile))); menu.Items.Add(Item("Edit", () => Edit(profile))); menu.Items.Add(Item("Duplicate", () => { var copy = profile.DeepClone(); copy.Id = Guid.NewGuid(); copy.CreatedAt = DateTimeOffset.UtcNow; copy.LastConnectedAt = null; copy.FriendlyName = profile.DisplayName + " copy"; Edit(copy); })); menu.Items.Add(Item(profile.Favorite ? "Remove favorite" : "Favorite", () => ToggleFavorite(profile)));
-        var move = new MenuItem { Header = "Move to group" }; foreach (var group in _vm.Snapshot.Groups) move.Items.Add(Item(group.Name, () => Ui.Safe(this, () => { var changed = profile.DeepClone(); changed.GroupId = group.Id; _vm.Store.SaveConnection(changed); _vm.Reload(); }))); menu.Items.Add(move); menu.Items.Add(Item("Export RDP…", () => ExportRdp(profile))); menu.Items.Add(new Separator()); menu.Items.Add(Item("Delete profile", () => { if (Ui.Confirm(this, $"Remove {profile.DisplayName} from your library? The remote PC and any open session are unchanged.")) Ui.Safe(this, () => { _vm.Store.DeleteConnection(profile.Id); _vm.Reload(); }); })); return menu;
+        var move = new MenuItem { Header = "Move to group" }; foreach (var group in _vm.Snapshot.Groups) move.Items.Add(Item(group.Name, () => Ui.Safe(this, () => { var changed = profile.DeepClone(); changed.GroupId = group.Id; _vm.Store.SaveConnection(changed); _vm.Reload(); }))); menu.Items.Add(move); menu.Items.Add(Item("Export RDP…", () => ExportRdp(profile))); menu.Items.Add(new Separator()); menu.Items.Add(Item("Delete profile", () => { if (Ui.Confirm(this, $"Remove {profile.DisplayName} from your library? The remote PC and any open session are unchanged.")) Ui.Safe(this, () => { _vm.Store.DeleteConnection(profile.Id); _vm.Reload(); _vm.Previews.Delete(profile.Id); }); })); return menu;
     }
     private void ToggleFavorite(ConnectionProfile profile) => Ui.Safe(this, () => { var changed = profile.DeepClone(); changed.Favorite = !changed.Favorite; _vm.Store.SaveConnection(changed); _vm.Reload(); });
     private void Edit(ConnectionProfile? profile) => Ui.Safe(this, () => { new PcEditor(this, _vm, profile).ShowDialog(); Refresh(); });

@@ -62,7 +62,7 @@ All remote features below remain **Conditional: local Windows probes passed; rem
 | Remote high DPI | No proven scale-factor negotiation | Unavailable; local application DPI scaling is separate |
 | Camera / arbitrary USB | No mapping | Unavailable; device, POS-device, drive and port sharing disabled |
 | Per-session mouse swap | No mapping | Unavailable; never calls global SwapMouseButton |
-| Thumbnails | No app-owned surface capture implementation | Unavailable; no desktop screenshot substitution |
+| Thumbnails | Optional native-control PrintWindow; no screen-pixel copy | Synthetic control/privacy/storage probe passed; actual remote rendering unverified |
 | UDP/proxy/interpolation preferences | No proven per-control mapping yet | Unavailable; do not advertise saved preferences as effective |
 | Cloud/RemoteApps/Teams/Shortpath | No backend integration | Deferred |
 
@@ -76,7 +76,7 @@ Record client Windows build, x64, control file version, host OS/build, installat
 4. Use wrong credentials once, cancel authentication, reject an untrusted/changed certificate, interrupt/recover networking, and deliberately disconnect during reconnect. Confirm no repeated credential attempts or resurrection after close.
 5. Test dynamic-size success and rejection fallback, 100/150/200% DPI, monitor changes, each sound mode, clipboard in each direction and Disabled, printer/smart-card/microphone policies.
 6. Test an authorized RD Gateway with separate credentials, failure, direct-first bypass, and any proxy requirements. Verify direct connections never silently use a saved gateway after changing the profile.
-7. Mark remaining parity blockers explicitly. Do not enable folder/read-only, one-way clipboard, screenshots, camera, multiple monitors, high DPI, or mouse swapping based only on property names.
+7. Mark remaining parity blockers explicitly. Do not enable folder/read-only, one-way clipboard, camera, multiple monitors, high DPI, or mouse swapping based only on property names.
 
 ## Primary documentation
 
@@ -100,3 +100,9 @@ Record client Windows build, x64, control file version, host OS/build, installat
 - [Native gateway password setter](https://learn.microsoft.com/en-us/windows/win32/termserv/imsrdpclienttransportsettings2-gatewaypassword)
 - [Native dual-interface type description](https://learn.microsoft.com/en-us/windows/win32/api/oaidl/nf-oaidl-itypeinfo-getreftypeofimpltype)
 - [Native function signature and vtable offset metadata](https://learn.microsoft.com/en-us/windows/win32/api/oaidl/ns-oaidl-funcdesc)
+
+## Optional last-session previews
+
+RdpPreviewCapture requests PW_CLIENTONLY rendering from the app-owned AxHost HWND through [PrintWindow](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-printwindow). It never reads screen pixels. Unknown/blank/hidden surfaces fail to a prior preview or original code-drawn computer illustration. A five-second UI-thread timer runs only after native login completion with explicit opt-in; minimization skips capture. A final attempt happens before deliberate disconnect or accepted close. Failure/disconnect persists only the buffered last usable frame, which is erased after saving. No authenticated session means no new image. PrintWindow is synchronous and renderer-dependent; actual RDP results and responsiveness require interactive acceptance. No new engine or dependency is introduced.
+
+Images are reduced to at most 480×300, constrained to 1 MiB, and stored atomically in per-profile GUID-named files protected using [CryptProtectData](https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata), without LOCAL_MACHINE and with UI forbidden. Timestamps are inside the encrypted payload. The cache is independent of SQLite and profile export; no screenshot leaves the computer. Other software running as the same Windows account can decrypt DPAPI data. Clear disables capture before notifying open sessions and deleting files, preventing buffered images from reappearing. No plaintext temporary image file is written.

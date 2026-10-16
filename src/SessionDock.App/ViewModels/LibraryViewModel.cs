@@ -9,6 +9,8 @@ public sealed class LibraryViewModel : ObservableObject, IDisposable
     public SqliteProfileStore Store { get; }
     public WindowsCredentialVault Vault { get; } = new();
     public string DataDirectory { get; }
+    public PreviewStore Previews { get; }
+    public void PreviewChanged() => Changed?.Invoke(this, EventArgs.Empty);
     public LibrarySnapshot Snapshot { get; private set; }
     public Dictionary<Guid, SessionState> SessionStates { get; } = [];
     public List<string> Notifications { get; } = [];
@@ -22,6 +24,7 @@ public sealed class LibraryViewModel : ObservableObject, IDisposable
     public LibraryViewModel(string dataDirectory)
     {
         DataDirectory = dataDirectory;
+        Previews = new PreviewStore(dataDirectory);
         _diagnostics = new LocalDiagnostics(System.IO.Path.Combine(dataDirectory, "logs"));
         Store = new SqliteProfileStore(System.IO.Path.Combine(dataDirectory, "library.db"));
         Store.Initialize(); Snapshot = Store.Load(); _persistedSettings = Snapshot.Settings.DeepClone();

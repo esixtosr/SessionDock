@@ -63,3 +63,7 @@ Include only the relevant redacted report. Do not send passwords, tokens, creden
 ## Certificate policy acceptance: NOT VERIFIED
 
 Run trusted certificate, self-signed, hostname mismatch, changed certificate, invalid credentials, unreachable host and deliberate cancellation in both modes. Record versions/policies, strict rejection, optional native warnings, ownership/visibility, dismissal without premature Connected and no retry loops. Verify restart persistence and unchanged credentials. See [W11PC4-Public procedure](CERTIFICATE-AUTHENTICATION.md#test-w11pc4-public).
+
+## Last-session previews
+
+Enable in Personalization only with authorized non-sensitive remote content. Verify two PCs get separate previews on close, timestamps and Disconnected state, restart persistence, unexpected network loss retaining the last sampled frame, and illustration for a never-connected PC. Cover the session with a distinct local window; confirm its pixels never appear. Test minimized/native full-screen sessions, lock/unlock, renderer failures and quick connect/disconnect. Disable during an open session and verify no capture/save; Clear previews while two sessions are open, disconnect them and restart: images must remain absent and capture off. Test clear with unwritable cache (error must be visible), PC deletion and library replacement. These real RDP cases have NOT been run by the author.

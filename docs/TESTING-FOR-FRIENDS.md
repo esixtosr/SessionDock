@@ -30,7 +30,7 @@ Issues are public. Replace real addresses and account names with labels such as 
 
 ## Skip these for now
 
-Selected-folder/read-only sharing, one-way clipboard, cameras, multiple monitors, remote DPI optimization, mouse swapping, and session screenshots are unavailable. Full screen needs further validation. Basic installation/uninstall passed on the Windows test machine; Windows 11 installation and upgrades still need testing.
+Selected-folder/read-only sharing, one-way clipboard, cameras, multiple monitors, remote DPI optimization, and mouse swapping are unavailable. Last-session previews are optional and best effort; enable them under Personalization and test actual remote rendering. Full screen needs further validation. Basic installation/uninstall passed on the Windows test machine; Windows 11 installation and upgrades still need testing.
 
 Untrusted server certificates can prevent a connection. Report that result without bypassing certificate checks.
 
