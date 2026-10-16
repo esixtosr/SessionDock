@@ -9,7 +9,7 @@ namespace SessionDock.App.Views;
 
 internal sealed class SettingsWindow : Window
 {
-    private static readonly string[] Categories = ["General", "Personalization", "Full Screen Mode", "Notifications", "Keyboard", "Resolutions", "Credentials", "Gateways", "Groups"];
+    private static readonly string[] Categories = ["General", "Personalization", "Full Screen Mode", "Notifications", "Keyboard", "Resolutions", "Credentials", "Gateways", "Groups", "About"];
     private readonly LibraryViewModel _vm;
     private readonly ListBox _navigation;
     private readonly ContentControl _page = new();
@@ -30,7 +30,7 @@ internal sealed class SettingsWindow : Window
         if (!_historyNavigation && index != _current) { _back.Push(_current); _forward.Clear(); }
         _current = index; _backButton.IsEnabled = _back.Count > 0; _forwardButton.IsEnabled = _forward.Count > 0;
         var panel = Ui.Stack(20); panel.Children.Add(Ui.Text(Categories[index], 24));
-        switch (index) { case 0: General(panel); break; case 1: Personalization(panel); break; case 2: FullScreen(panel); break; case 3: Notifications(panel); break; case 4: Keyboard(panel); break; case 5: Resolutions(panel); break; case 6: Credentials(panel); break; case 7: Gateways(panel); break; case 8: Groups(panel); break; }
+        switch (index) { case 0: General(panel); break; case 1: Personalization(panel); break; case 2: FullScreen(panel); break; case 3: Notifications(panel); break; case 4: Keyboard(panel); break; case 5: Resolutions(panel); break; case 6: Credentials(panel); break; case 7: Gateways(panel); break; case 8: Groups(panel); break; case 9: About(panel); break; }
         _page.Content = Ui.Scroll(panel);
     }
     private void Back() { if (_back.Count == 0) return; _forward.Push(_current); _historyNavigation = true; _navigation.SelectedIndex = _back.Pop(); _historyNavigation = false; }
@@ -50,6 +50,17 @@ internal sealed class SettingsWindow : Window
         Select(panel, "Sound for new PCs", _vm.Snapshot.Settings.DefaultRedirection.Sound, value => _vm.Snapshot.Settings.DefaultRedirection.Sound = value);
         Ui.Check("Imported folder defaults: Nothing / read-only unavailable", false, panel, false);
         panel.Children.Add(Ui.Text("Library storage", 18)); Ui.Note(panel, "The per-user database stores profile metadata. Passwords remain in Windows Credential Manager and are excluded from exports and backups."); panel.Children.Add(Ui.Button("Export application profiles…", ExportProfiles)); panel.Children.Add(Ui.Button("Import application profiles…", ImportProfiles)); panel.Children.Add(Ui.Button("Back up database…", Backup));
+    }
+    private void About(StackPanel panel)
+    {
+        panel.Children.Add(Ui.Text("SessionDock " + AppBuild.Version, 22));
+        Ui.Note(panel, "An independent Windows Remote Desktop connection manager. Unsigned testing preview.");
+        Ui.Note(panel, "Build: " + AppBuild.Build);
+        Ui.Note(panel, "Windows x64 · Bundled runtime; no development tools needed.");
+        Ui.Note(panel, "Running from: " + Environment.ProcessPath);
+        panel.Children.Add(Ui.Button("Copy version details", () => Ui.Safe(this, () => Clipboard.SetText(AppBuild.Details))));
+        panel.Children.Add(Ui.Button("Open downloads", () => Ui.Safe(this, () => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(AppBuild.DownloadsUrl) { UseShellExecute = true }))));
+        Ui.Note(panel, "Choose the newest successful main build, then the SessionDock-v…-Windows-x64 download under Artifacts. GitHub may require sign-in. Download and extract once, close SessionDock completely, then run Install.cmd from the new folder. Your saved PCs and credentials are retained. Updates are installed manually.");
     }
     private void Personalization(StackPanel panel)
     {

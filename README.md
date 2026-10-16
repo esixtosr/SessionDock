@@ -8,12 +8,15 @@ The idea is simple: keep your remote PCs in one place, organize them into groups
 
 ## Download and open it
 
-**[Download the Windows preview](https://github.com/esixtosr/SessionDock/releases/tag/v0.1.0-preview.2)**
+**[Open the Windows downloads](https://github.com/esixtosr/SessionDock/actions/workflows/windows.yml?query=branch%3Amain)**
 
-1. On the release page, download **`SessionDock-v0.1.0-preview.2-win-x64.zip`** under **Assets**. You do not need the source-code downloads to use the app.
-2. Right-click the ZIP and choose **Extract All**.
-3. Open the extracted folder and double-click **`SessionDock.exe`**. Keep the other files in that folder.
-4. If you want a Start menu shortcut, run **`Install.cmd`**. Installing is optional.
+1. Open the newest successful **main** build (green check). GitHub may ask you to sign in.
+2. Under **Artifacts**, download **SessionDock-v0.1.0-preview.3-Windows-x64**. Choose the Windows download, not developer source files or verification reports.
+3. Right-click the downloaded ZIP and choose **Extract All** once.
+4. Close SessionDock completely, then run **Install.cmd** from the new folder. Or run **SessionDock.exe** there without installing. Keep its other files together.
+5. Open **Settings → About** to check the installed version. The library footer also shows it.
+
+Each update has its own numbered Windows download. The installer shows the incoming version and keeps saved PCs and credentials. Earlier published previews remain on the [releases page](https://github.com/esixtosr/SessionDock/releases); they may lack newer fixes. Updates are manual; the app does not silently download or install them.
 
 You need a **Windows 11 x64 computer**. ARM-based Windows PCs have not been tested. The download includes the app's runtime, so you should not need to install development tools.
 
@@ -39,6 +42,7 @@ Use the account you normally use to sign in to that remote PC. If your organizat
 - Display, clipboard, audio, and device settings where the engine supports them.
 - Settings that stay saved, plus profile import/export and database backups.
 - An optional system-tray launcher.
+- Optional encrypted last-session previews, per-PC certificate authentication, and an About screen with version/build details.
 
 Automated checks on a Windows test machine passed for the build, saved profiles, settings, password storage and handoff, and installation/uninstall. Real remote connections and Windows 11 compatibility still need testing. [Testing results and limitations](docs/VERIFICATION.md) explain exactly what has been checked.
 

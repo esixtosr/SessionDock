@@ -1,6 +1,10 @@
 # Changes
 
-## Unreleased
+## 0.1.0-preview.3
+
+- Visible version in the library footer and Settings > About, with copyable build/location details.
+- Numbered Windows downloads that extract once; installer and Installed Apps version read from the running app bundle.
+- Package/binary version agreement and About-version UI checks.
 
 - Add Windows compositor capture for RDP renderers that return blank native redraws; expose preview capture status in Connection details.
 

@@ -57,7 +57,7 @@ public sealed class MainWindow : Window
     private static MenuItem Item(string title, Action action) { var item = new MenuItem { Header = title }; item.Click += (_, _) => action(); return item; }
     private void Refresh()
     {
-        _heading.Text = _section; _count.Text = "SessionDock Preview · " + _sessions.Count + " session window(s)";
+        _heading.Text = _section; _count.Text = "SessionDock " + AppBuild.Version + " · " + _sessions.Count + " session window(s)";
         if (_section == "Apps") { var future = Ui.Stack(24); future.Children.Add(Ui.Text("Published applications are planned", 22)); Ui.Note(future, "SessionDock currently manages saved PC connections. Cloud workspaces, Azure Virtual Desktop, Windows 365, and published RemoteApps are deferred."); _content.Content = future; return; }
         var profiles = _vm.Filtered().ToList();
         if (profiles.Count == 0) { var empty = Ui.Stack(24); empty.Children.Add(Ui.Text(string.IsNullOrWhiteSpace(_vm.Query) ? (_section == "Favorites" ? "No favorites yet" : "Add your first PC") : "No matching PCs", 22)); Ui.Note(empty, "Save an authorized remote PC to connect. No example machines or credentials are added."); empty.Children.Add(Ui.Button("Add PC", () => Edit(null))); _content.Content = empty; return; }

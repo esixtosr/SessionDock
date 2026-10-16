@@ -47,7 +47,7 @@ function Save-AppScreenshot([System.Windows.Automation.AutomationElement]$Window
     $graphics = $null
     $previousDpi = [IntPtr]::Zero
     try {
-        if ($Name -notin @('library', 'settings', 'failure')) { throw 'Only known isolated-test windows may be captured.' }
+        if ($Name -notin @('library', 'settings', 'about', 'failure')) { throw 'Only known isolated-test windows may be captured.' }
         if ($Window.Current.ProcessId -ne $script:process.Id) { throw 'The capture window does not belong to the isolated test application.' }
         Add-Type -AssemblyName System.Drawing
         if (-not ('SessionDock.UiSmokeCapture' -as [type])) {
@@ -224,12 +224,17 @@ try {
     $general = Find-Element $settings 'General' ([System.Windows.Automation.ControlType]::ListItem)
     if ($general) { $general.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select() }
     Save-AppScreenshot $settings 'settings'
-    foreach ($category in @('General','Personalization','Full Screen Mode','Notifications','Keyboard','Resolutions','Credentials','Gateways','Groups')) {
+    foreach ($category in @('General','Personalization','Full Screen Mode','Notifications','Keyboard','Resolutions','Credentials','Gateways','Groups','About')) {
         $item = Find-Element $settings $category ([System.Windows.Automation.ControlType]::ListItem)
         if (-not $item) { throw "Missing settings category '$category'." }
         $item.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
     }
-    $personalization = Find-Element $settings 'Personalization' ([System.Windows.Automation.ControlType]::ListItem)
+    $expectedVersion = ([Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path (Split-Path $Executable -Parent) 'SessionDock.dll')).ProductVersion -split '\+')[0]
+    $aboutVersion = Find-Element $settings ("SessionDock " + $expectedVersion) ([System.Windows.Automation.ControlType]::Text)
+    if (-not $aboutVersion) { throw 'About does not show the running app version.' }
+    $report.tests += @{name='About shows the actual app version';result='Passed'}
+    Save-AppScreenshot $settings 'about'
+    $personalization = Find-Element $settings 'Personalization'  ([System.Windows.Automation.ControlType]::ListItem)
     $personalization.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
     $previewToggle = Find-Element $settings 'Save last-session previews' ([System.Windows.Automation.ControlType]::CheckBox)
     if (-not $previewToggle) { throw 'Preview opt-in setting is missing.' }
@@ -237,7 +242,7 @@ try {
     if ($toggle.Current.ToggleState -ne [System.Windows.Automation.ToggleState]::Off) { throw 'Preview capture must default to off.' }
     $toggle.Toggle()
     Invoke-Button $settings 'Done'
-    $report.tests += @{name='Nine settings categories accessible';result='Passed'}
+    $report.tests += @{name='Ten settings categories accessible';result='Passed'}
     Stop-TestApp (Wait-Window 'SessionDock')
     $main = Start-TestApp
     Invoke-Button $main 'Settings'

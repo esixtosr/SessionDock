@@ -132,3 +132,9 @@ The [capability matrix](CAPABILITIES.md), [verification report](VERIFICATION.md)
 The Windows engine probe additionally exercises optional previews using synthetic control pixels: overlap isolation, size/blank/hidden checks, per-user encrypted cache reload, corruption fallback, deletion and clear. No remote desktop is captured by that probe. UI smoke now checks preview default-off, opt-in persistence and clearing. Actual RDP renderer behavior remains an interactive acceptance task.
 
 Windows-facing projects use net10.0-windows10.0.19041.0 for the Windows Graphics Capture projections (SDK pack 10.0.19041.57). The bundled .NET and Windows Desktop runtime remains pinned at 10.0.13 using per-framework metadata. The engine probe also checks compositor crop pixels, overlap isolation and minimization with synthetic windows; it still never connects to an RDP server.
+
+## Numbered Windows downloads
+
+Directory.Build.props is the application version source (currently 0.1.0-preview.3). Package-Preview.ps1 reads it and rejects a mismatch with the published DLL's informational version. It includes BUILD-INFO.json in the app and creates a flat numbered Windows ZIP plus a separate source ZIP. Install-Local.ps1 reads the DLL version for installer output and Installed Apps registration. The CI installation probe checks exact registration/version agreement.
+
+CI provides a user-facing **SessionDock-v<version>-Windows-x64** artifact containing the complete published app directly, so its downloaded ZIP needs one extraction. Developer release files and verification evidence remain separate artifacts. The extraction/install smoke locates the single numbered Windows ZIP dynamically; version updates no longer require editing a hard-coded archive name. Existing published releases are not modified by this workflow.

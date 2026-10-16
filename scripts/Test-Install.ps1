@@ -123,6 +123,8 @@ try {
     if ($registration.DisplayName -ne 'SessionDock Preview' -or [string]::IsNullOrWhiteSpace($registration.DisplayVersion)) {
         throw 'Installed Apps registration is missing its name or version.'
     }
+    $expectedVersion = ([Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $bundle 'SessionDock.dll')).ProductVersion -split '\+')[0]
+    if ($registration.DisplayVersion -cne $expectedVersion) { throw 'Installed Apps version does not match the published app.' }
     $installedUninstaller = Join-Path $destination 'Uninstall-Local.ps1'
     $expectedUninstall = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + $installedUninstaller + '"'
     if ($registration.UninstallString -cne $expectedUninstall) { throw 'Installed Apps does not register the bundled uninstaller correctly.' }

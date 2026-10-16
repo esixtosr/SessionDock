@@ -59,3 +59,9 @@ Uninstall via Installed Apps or the installed `Uninstall-Local.ps1`. Library dat
 ## Server certificate authentication
 
 Strict remains the default. Optional Interactive mode uses native Windows warnings subject to policy. Read [certificate security and W11PC4-Public testing](CERTIFICATE-AUTHENTICATION.md) before enabling it.
+
+## Version and updates
+
+The library footer and **Settings → About** show the running version. About also shows the source build and executable location, with **Copy version details** for troubleshooting. **Open downloads** opens the repository's main Windows build list; select the newest successful build and its numbered **Windows-x64** artifact. GitHub sign-in may be required. This is a manual download link, not an automatic update checker.
+
+The Windows artifact contains the app directly: extract once into a new folder. Close the old app and its tray icon, run **Install.cmd** from the new folder, and reopen from Start. The installer prints the incoming version and writes the same version to Windows Installed Apps. Saved profiles, credentials and previews are retained. **SessionDock-release-files** is a separate developer artifact containing source/packaged archives; ordinary users should choose the numbered Windows-x64 download.

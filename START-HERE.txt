@@ -1,10 +1,12 @@
-SessionDock — early Windows preview
+SessionDock — numbered Windows preview
 
 OPEN THE APP
-1. Right-click the downloaded ZIP and choose Extract All.
+1. Download the numbered SessionDock-v…-Windows-x64 package.
+   Right-click its ZIP and choose Extract All once.
 2. Open the extracted folder and double-click SessionDock.exe.
 3. Keep the other files next to it. You do not need development tools.
-4. Optional: run Install.cmd to add SessionDock to your Start menu.
+4. Optional: close SessionDock, then run Install.cmd for a Start menu shortcut.
+5. Settings > About and the library footer show the running app version.
 
 TRY ONE CONNECTION
 Choose Add > Add PC. Enter a remote PC you are allowed to use, give it a name,
@@ -19,14 +21,22 @@ do not turn off Windows security just to test it. Use the resizable session wind
 if full screen is unavailable.
 
 Folder sharing/read-only folders, one-way clipboard, cameras, multiple monitors,
-remote DPI, mouse-button swapping and desktop thumbnails are not available yet.
+remote DPI and mouse-button swapping are not available yet.
+Last-session previews are optional under Settings > Personalization.
 Cloud workspaces and published apps will come later.
 
 SEND FEEDBACK
 Simple checklist: docs/TESTING-FOR-FRIENDS.md
 Report a problem: https://github.com/esixtosr/SessionDock/issues
-Project/downloads: https://github.com/esixtosr/SessionDock
+Project: https://github.com/esixtosr/SessionDock
+Latest Windows builds: https://github.com/esixtosr/SessionDock/actions/workflows/windows.yml?query=branch%3Amain
 
 Include your app version, Windows version, what you clicked, and what happened.
 Never include passwords or private account/server details. Closing a session
 should disconnect it without signing you out of the remote PC.
+
+UPDATING
+Download the newest successful main build's numbered Windows-x64 artifact.
+Extract once into a new folder. Exit the old app completely (including the tray),
+then run Install.cmd from the new folder. Saved PCs, credentials and previews stay
+in your Windows user-data folders. Check Settings > About after reopening.
