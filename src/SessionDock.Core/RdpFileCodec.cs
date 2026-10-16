@@ -70,6 +70,10 @@ public static class RdpFileCodec
                         if (!EndpointParser.TryParse(value, out var endpoint, out var error)) throw new FormatException(error);
                         draft.Host = endpoint!.Host; draft.Port = endpoint.Port;
                         break;
+                    case "authentication level":
+                        draft.CertificatePolicy = Integer(kind, value, 1, 2) == 1 ? RdpCertificatePolicy.Strict : RdpCertificatePolicy.Interactive;
+                        if (draft.CertificatePolicy == RdpCertificatePolicy.Interactive) issues.Add(new(key, "Interactive authentication permits native Windows warnings for unverified server identity. Independently verify the server; Windows policy may block access."));
+                        break;
                     case "server port": explicitPort = Integer(kind, value, 1, 65535); break;
                     case "username": RequireType(kind, 's'); username = SafeMetadata(value); break;
                     case "domain": RequireType(kind, 's'); domain = SafeMetadata(value); break;
@@ -147,6 +151,8 @@ public static class RdpFileCodec
         void I(string key, int value) => output.Append(key).Append(":i:").Append(value.ToString(CultureInfo.InvariantCulture)).Append("\r\n");
         void B(string key, bool value) => I(key, value ? 1 : 0);
         S("full address", profile.Endpoint);
+        I("authentication level", profile.CertificatePolicy == RdpCertificatePolicy.Strict ? 1 : 2);
+        B("enablecredsspsupport", true);
         if (!profile.Display.AutomaticResolution) { I("desktopwidth", profile.Display.Width); I("desktopheight", profile.Display.Height); }
         I("screen mode id", profile.Display.StartFullScreen ? 2 : 1);
         I("session bpp", profile.Display.ColorDepth);

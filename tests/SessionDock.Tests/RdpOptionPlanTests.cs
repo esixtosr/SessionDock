@@ -9,6 +9,52 @@ public sealed class RdpOptionPlanTests
     private static ConnectionProfile Profile() => new() { Host = "authorized-test.invalid" };
     private static object Value(IReadOnlyList<RdpOption> options, string member) => Assert.Single(options, x => x.Member == member).Value;
 
+    [Theory]
+    [InlineData(RdpCertificatePolicy.Strict, 1u)]
+    [InlineData(RdpCertificatePolicy.Interactive, 2u)]
+    public void CertificateModesPreserveCredSspAndEveryOtherOption(RdpCertificatePolicy policy, uint expected)
+    {
+        var profile = Profile();
+        var baseline = RdpOptionPlan.Create(profile, null, 1200, 720);
+        profile.CertificatePolicy = policy;
+        var options = RdpOptionPlan.Create(profile, null, 1200, 720);
+        Assert.Equal(expected, Value(options, "AuthenticationLevel"));
+        Assert.NotEqual(0u, Value(options, "AuthenticationLevel"));
+        Assert.Equal(true, Value(options, "EnableCredSspSupport"));
+        Assert.Equal(baseline.Where(x => x.Member != "AuthenticationLevel"), options.Where(x => x.Member != "AuthenticationLevel"));
+        Assert.Equal(policy, profile.DeepClone().CertificatePolicy);
+    }
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(2)]
+    [InlineData(999)]
+    public void InvalidCertificatePolicyFailsValidationAndMapping(int value)
+    {
+        var profile = Profile(); profile.CertificatePolicy = (RdpCertificatePolicy)value;
+        Assert.NotEmpty(ProfileValidator.Validate(profile));
+        Assert.Throws<ArgumentOutOfRangeException>(() => RdpOptionPlan.Create(profile, null, 1200, 720));
+    }
+    [Theory]
+    [InlineData(RdpCertificatePolicy.Strict)]
+    [InlineData(RdpCertificatePolicy.Interactive)]
+    public void ProfileExchangePreservesCertificatePolicy(RdpCertificatePolicy policy)
+    {
+        var profile = Profile(); profile.CertificatePolicy = policy;
+        var json = ProfileExportCodec.Export(new() { Connections = [profile] });
+        Assert.Equal(policy, Assert.Single(ProfileExportCodec.Import(json).Connections).CertificatePolicy);
+        var rdp = RdpFileCodec.Export(profile);
+        Assert.Contains("enablecredsspsupport:i:1", rdp);
+        Assert.Equal(policy, RdpFileCodec.Review(rdp).Accept().CertificatePolicy);
+    }
+    [Fact]
+    public void LegacyProfileExchangeDefaultsToStrict()
+    {
+        var json = ProfileExportCodec.Export(new() { Connections = [Profile()] });
+        json = json.Replace("\"certificatePolicy\": \"Strict\",", "");
+        Assert.Equal(RdpCertificatePolicy.Strict, Assert.Single(ProfileExportCodec.Import(json).Connections).CertificatePolicy);
+        Assert.Equal(RdpCertificatePolicy.Strict, RdpFileCodec.Review("full address:s:test.invalid").Accept().CertificatePolicy);
+        Assert.False(RdpFileCodec.Review("full address:s:test.invalid\nauthentication level:i:0").IsValid);
+    }
     [Fact]
     public void DefaultMappingRequiresServerAuthenticationAndNla()
     {

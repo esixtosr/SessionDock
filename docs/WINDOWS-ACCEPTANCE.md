@@ -59,3 +59,7 @@ Failed / not tested checks:
 ```
 
 Include only the relevant redacted report. Do not send passwords, tokens, credential database exports or screenshots containing unrelated remote content. A failure report is useful evidence; do not mark a checklist item passed merely because its UI toggle can be selected.
+
+## Certificate policy acceptance: NOT VERIFIED
+
+Run trusted certificate, self-signed, hostname mismatch, changed certificate, invalid credentials, unreachable host and deliberate cancellation in both modes. Record versions/policies, strict rejection, optional native warnings, ownership/visibility, dismissal without premature Connected and no retry loops. Verify restart persistence and unchanged credentials. See [W11PC4-Public procedure](CERTIFICATE-AUTHENTICATION.md#test-w11pc4-public).

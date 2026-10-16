@@ -59,7 +59,7 @@ The project began without an existing application repository. The full text spec
 
 - No successful RDP authentication or remote feature has been demonstrated. Windows interop, native password handoff, and credential storage now have local Windows probe evidence, but remote credentials, certificates, event sequences, and installed RDP/vault integration remain unverified.
 - Exact folder-only sharing/read-only enforcement, directional clipboard, mouse swap, cameras, multi-monitor, remote DPI negotiation, session screenshots, hotkey/startup, interpolation/UDP/proxy overrides, and automatic injected Ctrl+Alt+Delete are unavailable. Native Ctrl+Alt+End is documented. No whole-drive sharing substitutes for selected-folder access.
-- Certificate authentication is strict; an untrusted or mismatched lab certificate can be rejected. No automatic trust bypass is supplied. Certificate behavior during actual connections remains untested.
+- Certificate authentication defaults to Strict; optional per-PC Interactive delegates warnings to Windows; an untrusted or mismatched lab certificate can be rejected. No automatic trust bypass is supplied. Certificate behavior during actual connections remains untested.
 - Smart cards/printers/microphone/clipboard/audio/gateway/admin/display options are requests subject to host policy. A checked control or accepted setter is not proof of a remote effect.
 - WPF/WinForms airspace, keyboard routing, DPI, focus, full-screen exit, high contrast, and accessibility still require interactive tests. Work-area clamping and scrolling exist; the single settings capture and UI smoke are not a complete visual/accessibility pass.
 - Card creation is eager. Large-library performance is not benchmarked.
@@ -69,3 +69,13 @@ The project began without an existing application repository. The full text spec
 ## Next evidence
 
 For each release, rerun the [Windows workflow](https://github.com/esixtosr/SessionDock/actions/workflows/windows.yml) at its tag and verify its public assets and checksums. For tester feedback, follow [Windows acceptance](WINDOWS-ACCEPTANCE.md) on Windows 11 with authorized hosts: prompted/saved login, two sessions, input, deliberate disconnect, then remote options and upgrades. Supply the 19 images for side-by-side review. Use host aliases and error codes in reports, never passwords or private session images.
+
+## Certificate authentication feature: local results, 2026-10-16
+
+- Pinned SDK 10.0.201 installed in ignored artifacts. Locked restore passed without dependency changes.
+- Release solution build passed: zero warnings/errors. Unit tests: 112 passed, zero failed/skipped. Covers policy mapping, invalid values, CredSSP, no level 0, unchanged options, clone, SQLite restart/legacy payload, JSON and .rdp exchange.
+- Windows build 26200 x64, control 10.0.26100: existing no-network probe passed two-control activation, all 32 option operations including both authentication levels, temporary vault round-trip/deletion, and repeated disconnect/disposal. Local report: ignored artifacts/verification/certificate-engine.json.
+- Generated interop validation NOT VERIFIED locally: tlbimp.exe/aximp.exe SDK tools unavailable. Dialog-parent metadata validation added to the generation script. Actual warning ownership/visibility NOT VERIFIED; needs generated-wrapper CI and interactive testing.
+- Real RDP matrix, in both modes: trusted certificate, self-signed, hostname mismatch, changed certificate, invalid credentials, unreachable host, deliberately cancelled connection: **NOT VERIFIED**. No authorized test server/account supplied. Unit tests and accepted setters do not prove real certificate authentication.
+- UI automation, self-contained publish, installation and MSIX not run for this change. Earlier evidence applies only to its recorded revision.
+- Published releases/tags, machine-wide policies and existing credentials unchanged.
