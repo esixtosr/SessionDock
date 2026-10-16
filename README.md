@@ -1,4 +1,4 @@
-# SessionDock
+﻿# SessionDock
 
 A remote desktop connection manager for Windows, inspired by the saved-PC layout of **Windows App on Mac**.
 
@@ -11,7 +11,7 @@ The idea is simple: keep your remote PCs in one place, organize them into groups
 **[Open the Windows downloads](https://github.com/esixtosr/SessionDock/actions/workflows/windows.yml?query=branch%3Amain)**
 
 1. Open the newest successful **main** build (green check). GitHub may ask you to sign in.
-2. Under **Artifacts**, download **SessionDock-v0.1.0-preview.4-Windows-x64**. Choose the Windows download, not developer source files or verification reports.
+2. Under **Artifacts**, download **SessionDock-v0.1.0-preview.5-Windows-x64**. Choose the Windows download, not developer source files or verification reports.
 3. Right-click the downloaded ZIP and choose **Extract All** once.
 4. Close SessionDock completely, then run **Install.cmd** from the new folder. Or run **SessionDock.exe** there without installing. Keep its other files together.
 5. Open **Settings → About** to check the installed version. The library footer also shows it.

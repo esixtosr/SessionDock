@@ -11,6 +11,7 @@ internal static class Ui
     public static TextBlock Text(string text, double size = 14, string brush = "TextBrush")
     {
         var block = new TextBlock { Text = text, FontSize = size, Margin = new Thickness(0, 3, 0, 7), TextWrapping = TextWrapping.Wrap };
+        if (size >= 18) block.FontWeight = FontWeights.SemiBold;
         block.SetResourceReference(TextBlock.ForegroundProperty, brush); return block;
     }
     public static Button Button(string label, Action action)

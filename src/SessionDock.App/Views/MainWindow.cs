@@ -40,8 +40,8 @@ public sealed class MainWindow : Window
         var bottom = Ui.Stack(); bottom.Children.Add(Ui.Button("Settings", OpenSettings)); bottom.Children.Add(Ui.Button("Exit SessionDock", ExitApp)); DockPanel.SetDock(bottom, Dock.Bottom); sidebar.Children.Add(bottom);
         var nav = Ui.Stack(20);
         var brand = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 10) };
-        var brandLabel = new TextBlock { Text = "SD", FontFamily = new FontFamily("Consolas"), FontSize = 14, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-        brandLabel.SetResourceReference(TextBlock.ForegroundProperty, "AccentBrush");
+        var brandLabel = new System.Windows.Shapes.Path { Data = Geometry.Parse("M 0 14 L 14 0 L 28 14 L 14 28 Z M 8 14 L 14 8 L 20 14 L 14 20 Z"), Width = 24, Height = 24, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        brandLabel.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "AccentBrush");
         var emblem = new Border { Width = 38, Height = 38, CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 10, 0), Child = brandLabel };
         emblem.SetResourceReference(Border.BorderBrushProperty, "AccentBrush"); brand.Children.Add(emblem);
         var wordmark = Ui.Text("SessionDock", 22); wordmark.FontWeight = FontWeights.SemiBold; wordmark.VerticalAlignment = VerticalAlignment.Center; brand.Children.Add(wordmark); nav.Children.Add(brand);
@@ -54,21 +54,23 @@ public sealed class MainWindow : Window
         }
         sidebar.Children.Add(nav); _layout.Children.Add(sidebar);
         var main = new DockPanel { Margin = new Thickness(8, 18, 18, 12) }; Grid.SetColumn(main, 1); _layout.Children.Add(main);
-        var header = new DockPanel(); DockPanel.SetDock(header, Dock.Top);
+        var header = new DockPanel { Margin = new Thickness(0, 0, 0, 12) }; DockPanel.SetDock(header, Dock.Top);
+        _heading.VerticalAlignment = VerticalAlignment.Center; _heading.Margin = new Thickness(12, 0, 0, 0);
         var collapse = Ui.Button("☰", () => _sidebarColumn.Width = new GridLength(_sidebarColumn.Width.Value == 0 ? 240 : 0)); collapse.ToolTip = "Show or hide sidebar"; AutomationProperties.SetName(collapse, "Show or hide sidebar"); DockPanel.SetDock(collapse, Dock.Left); header.Children.Add(collapse); header.Children.Add(_heading); main.Children.Add(header);
-        var toolbar = new WrapPanel { Margin = new Thickness(0, 4, 0, 14) }; DockPanel.SetDock(toolbar, Dock.Top);
+        var toolbar = new WrapPanel { Margin = new Thickness(0, 0, 0, 12) }; DockPanel.SetDock(toolbar, Dock.Top);
         var add = Ui.Button("＋ Add", () => { }); var addMenu = new ContextMenu(); addMenu.Items.Add(Item("Add PC", () => Edit(null))); addMenu.Items.Add(Item("Add Group", AddGroup)); addMenu.Items.Add(Item("Import RDP file…", ImportRdp)); add.ContextMenu = addMenu; add.Click += (_, _) => { addMenu.PlacementTarget = add; addMenu.IsOpen = true; }; add.SetResourceReference(Button.ForegroundProperty, "AccentBrush"); add.SetResourceReference(Button.BorderBrushProperty, "AccentBrush"); toolbar.Children.Add(add);
         toolbar.Children.Add(Ui.Button("Notifications", ShowNotifications));
         toolbar.Children.Add(Ui.Button("Grid / List", () => { _vm.Snapshot.Settings.View = _vm.Snapshot.Settings.View == LibraryView.Grid ? LibraryView.List : LibraryView.Grid; _vm.SaveSettings(); }));
         var sort = new ComboBox { ItemsSource = Enum.GetValues<LibrarySort>(), SelectedItem = vm.Snapshot.Settings.Sort, Width = 125, Margin = new Thickness(4), ToolTip = "Sort connections" }; AutomationProperties.SetName(sort, "Sort connections"); sort.SelectionChanged += (_, _) => Ui.Safe(this, () => { _vm.Snapshot.Settings.Sort = (LibrarySort)sort.SelectedItem; _vm.SaveSettings(); }); toolbar.Children.Add(sort);
         toolbar.Children.Add(Ui.Button("↑ / ↓", () => { _vm.Snapshot.Settings.SortDescending = !_vm.Snapshot.Settings.SortDescending; _vm.SaveSettings(); }));
         var view = Ui.Button("View options", () => { }); var menu = new ContextMenu(); menu.Items.Add(Item("Toggle groups", () => { _vm.Snapshot.Settings.GroupConnections = !_vm.Snapshot.Settings.GroupConnections; _vm.SaveSettings(); })); foreach (var size in Enum.GetValues<CardSize>()) menu.Items.Add(Item($"{size} cards", () => { _vm.Snapshot.Settings.CardSize = size; _vm.SaveSettings(); })); view.Click += (_, _) => { menu.PlacementTarget = view; menu.IsOpen = true; }; toolbar.Children.Add(view);
-        var search = new TextBox { Width = 210, Margin = new Thickness(4), ToolTip = "Search name, host, group, or credential label" }; AutomationProperties.SetName(search, "Search connections");
-        var searchContainer = new Grid(); searchContainer.Children.Add(search);
+        main.Children.Add(toolbar);
+        var search = new TextBox { Margin = new Thickness(0), ToolTip = "Search name, host, group, or credential label" }; AutomationProperties.SetName(search, "Search connections");
+        var searchContainer = new Grid { Margin = new Thickness(3, 0, 3, 20), HorizontalAlignment = HorizontalAlignment.Stretch }; searchContainer.Children.Add(search); DockPanel.SetDock(searchContainer, Dock.Top);
         var watermark = new TextBlock { Text = "Search PCs…", Margin = new Thickness(15, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center, Foreground = Ui.Brush("MutedBrush"), IsHitTestVisible = false };
         watermark.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         searchContainer.Children.Add(watermark);
-        search.TextChanged += (_, _) => { watermark.Visibility = search.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed; _vm.Query = search.Text; Refresh(); }; toolbar.Children.Add(searchContainer); main.Children.Add(toolbar);
+        search.TextChanged += (_, _) => { watermark.Visibility = search.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed; _vm.Query = search.Text; Refresh(); }; main.Children.Add(searchContainer);
         DockPanel.SetDock(_count, Dock.Bottom); main.Children.Add(_count); main.Children.Add(_content); Content = _layout;
         _vm.Changed += (_, _) => { Refresh(); ConfigureTray(); }; Closing += OnClosing; Loaded += (_, _) => { Refresh(); ConfigureTray(); };
     }
@@ -107,11 +109,13 @@ public sealed class MainWindow : Window
         foreach (var profile in profiles)
         {
             var state = _vm.State(profile.Id); var content = new StackPanel();
-            var preview = Preview(profile.Id, (width - 24) * .625);
+            var preview = Preview(profile.Id, (width - 24) * 9 / 16);
 
             content.Children.Add(preview); var top = new DockPanel(); var favorite = Ui.Button(profile.Favorite ? "★" : "☆", () => ToggleFavorite(profile)); AutomationProperties.SetName(favorite, profile.Favorite ? "Remove favorite" : "Add favorite"); favorite.ToolTip = "Favorite"; DockPanel.SetDock(favorite, Dock.Right); top.Children.Add(favorite);
-            var ellipsis = Ui.Button("···", () => { }); ellipsis.Click += (_, _) => { ellipsis.ContextMenu = Actions(profile); ellipsis.ContextMenu.PlacementTarget = ellipsis; ellipsis.ContextMenu.IsOpen = true; }; AutomationProperties.SetName(ellipsis, "Connection actions"); DockPanel.SetDock(ellipsis, Dock.Right); top.Children.Add(ellipsis); top.Children.Add(Ui.Text("PC Connection", 11, "MutedBrush")); content.Children.Add(top);
-            content.Children.Add(Ui.Text(profile.DisplayName, 18)); content.Children.Add(Ui.Text(_vm.CredentialLabel(profile.CredentialId), 12, "MutedBrush")); content.Children.Add(Ui.Text(state.ToString(), 12, state == SessionState.Connected ? "AccentBrush" : "MutedBrush"));
+            var ellipsis = Ui.Button("···", () => { }); ellipsis.Click += (_, _) => { ellipsis.ContextMenu = Actions(profile); ellipsis.ContextMenu.PlacementTarget = ellipsis; ellipsis.ContextMenu.IsOpen = true; }; AutomationProperties.SetName(ellipsis, "Connection actions"); ellipsis.ToolTip = "Connection actions"; DockPanel.SetDock(ellipsis, Dock.Right); top.Children.Add(ellipsis);
+            foreach (var action in new[] { favorite, ellipsis }) { action.Width = 32; action.MinHeight = 32; action.Height = 32; action.Padding = new Thickness(0); action.Margin = new Thickness(4, 0, 0, 0); }
+            top.Margin = new Thickness(0, 12, 0, 4); var name = Ui.Text(profile.DisplayName, 18); name.FontWeight = FontWeights.SemiBold; name.VerticalAlignment = VerticalAlignment.Center; name.Margin = new Thickness(0); top.Children.Add(name); content.Children.Add(top);
+            content.Children.Add(Ui.Text(_vm.CredentialLabel(profile.CredentialId), 12, "MutedBrush")); var status = Ui.Text(state.ToString(), 12, state == SessionState.Connected ? "AccentBrush" : "MutedBrush"); status.Margin = new Thickness(0, 8, 0, 2); content.Children.Add(status);
             var card = new Border { Width = width, Margin = new Thickness(0, 0, 14, 14), Padding = new Thickness(12), CornerRadius = new CornerRadius(12), Background = Ui.Brush("PanelBrush"), BorderBrush = Ui.Brush(state == SessionState.Connected || _selected == profile.Id ? "AccentBrush" : "BorderBrush"), BorderThickness = new Thickness(1, 1, 1, state == SessionState.Connected ? 4 : 1), Child = content, Focusable = true, ContextMenu = Actions(profile) };
             AutomationProperties.SetName(card, $"{profile.DisplayName}, {state}, {_vm.CredentialLabel(profile.CredentialId)}"); System.Windows.Input.KeyboardNavigation.SetIsTabStop(card, true);
             card.MouseLeftButtonDown += (_, e) => { if (InsideButton(e.OriginalSource as DependencyObject)) return; if (_selectedCard is not null && _selected is { } oldId && _vm.State(oldId) != SessionState.Connected) _selectedCard.BorderBrush = Ui.Brush("BorderBrush"); _selected = profile.Id; _selectedCard = card; card.Focus(); card.BorderBrush = Ui.Brush("AccentBrush"); if (e.ClickCount == 2) Connect(profile); }; card.KeyDown += (_, e) => { if (e.Key == Key.Enter) { Connect(profile); e.Handled = true; } }; wrap.Children.Add(card);

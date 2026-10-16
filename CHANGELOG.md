@@ -1,5 +1,12 @@
 # Changes
 
+## 0.1.0-preview.5
+
+- Replace the SD badge with an original navigation symbol.
+- Give search a dedicated row; use compact card actions, stronger headings and 16:9 preview areas.
+- Theme checkboxes and move unavailable General settings into a collapsed section.
+- Keep SessionDock branding while a distinctive replacement name is selected.
+
 ## 0.1.0-preview.4
 
 - Portfolio-inspired navy/teal theme, rounded controls, clearer navigation, search hint and refined PC cards.
