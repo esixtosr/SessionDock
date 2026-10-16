@@ -51,7 +51,7 @@ internal sealed class PcEditor : Window
         var folders = Ui.Stack(); tabs.Items.Add(new TabItem { Header = "Folders", Content = Ui.Scroll(folders) }); Ui.Check("Redirect selected folders — unavailable", false, folders, false);
         var table = new DataGrid { AutoGenerateColumns = false, IsReadOnly = true, CanUserAddRows = false, Height = 150, IsEnabled = false, Foreground = SystemColors.ControlTextBrush }; foreach (var name in new[] { "Name", "Path", "ReadOnly" }) table.Columns.Add(new DataGridTextColumn { Header = name == "ReadOnly" ? "Read-only" : name, Binding = new System.Windows.Data.Binding(name), Width = new DataGridLength(1, DataGridLengthUnitType.Star) }); table.ItemsSource = _draft.Redirection.Folders; folders.Children.Add(table); var folderButtons = new StackPanel { Orientation = Orientation.Horizontal }; foreach (var title in new[] { "Add", "Edit", "Remove" }) { var button = Ui.Button(title, () => { }); button.IsEnabled = false; folderButtons.Children.Add(button); } folders.Children.Add(folderButtons);
         Ui.Note(folders, "Exact folder-only access and per-folder read-only enforcement are not proven for this engine. No folders or containing drives are redirected. This feature remains a PC-parity requirement.");
-        Content = Ui.Scroll(root);
+        Content = root;
     }
     private List<Choice> CredentialChoices() { var result = new List<Choice> { new(null, "Ask when required") }; result.AddRange(_vm.Snapshot.Credentials.Select(c => new Choice(c.Id, c.Label))); return result; }
     private void UpdateResolution()

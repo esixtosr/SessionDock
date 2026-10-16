@@ -1,5 +1,11 @@
 # Changes
 
+## 0.1.0-preview.4
+
+- Portfolio-inspired navy/teal theme, rounded controls, clearer navigation, search hint and refined PC cards.
+- Matching light palette, visible keyboard focus states, retained system high-contrast brush mapping.
+- PC editor action buttons stay visible while settings scroll; dropdown/theme UI checks added.
+
 ## 0.1.0-preview.3
 
 - Visible version in the library footer and Settings > About, with copyable build/location details.

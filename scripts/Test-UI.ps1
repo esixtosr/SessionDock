@@ -41,6 +41,21 @@ function Set-Field($Window,[string]$Name,[string]$Value) {
     if (-not $field) { throw "Field '$Name' was not found." }
     $field.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($Value)
 }
+function Select-ComboItem($Window, [string]$Label, [string]$Choice) {
+    $combo = Find-Element $Window $Label ([System.Windows.Automation.ControlType]::ComboBox)
+    if (-not $combo) { throw "Missing dropdown '$Label'." }
+    $combo.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
+    $deadline = [DateTime]::UtcNow.AddSeconds(5)
+    do {
+        $item = Find-Element $combo $Choice ([System.Windows.Automation.ControlType]::ListItem)
+        if ($item) { break }; Start-Sleep -Milliseconds 100
+    } while ([DateTime]::UtcNow -lt $deadline)
+    if (-not $item) { throw "Missing choice '$Choice' in '$Label'." }
+    $item.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+    $combo.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Collapse()
+    $selected = $combo.GetCurrentPattern([System.Windows.Automation.SelectionPattern]::Pattern).Current.GetSelection()
+    if ($selected.Count -ne 1 -or $selected[0].Current.Name -ne $Choice) { throw "Dropdown '$Label' did not select '$Choice'." }
+}
 function Select-SettingsPage($Window, [string]$Name) {
     $item = Find-Element $Window $Name ([System.Windows.Automation.ControlType]::ListItem)
     if (-not $item) { throw "Missing settings category '$Name'." }
@@ -58,7 +73,7 @@ function Save-AppScreenshot([System.Windows.Automation.AutomationElement]$Window
     $graphics = $null
     $previousDpi = [IntPtr]::Zero
     try {
-        if ($Name -notin @('library', 'settings', 'about', 'failure')) { throw 'Only known isolated-test windows may be captured.' }
+        if ($Name -notin @('library', 'settings', 'about', 'editor', 'light', 'failure')) { throw 'Only known isolated-test windows may be captured.' }
         if ($Window.Current.ProcessId -ne $script:process.Id) { throw 'The capture window does not belong to the isolated test application.' }
         Add-Type -AssemblyName System.Drawing
         if (-not ('SessionDock.UiSmokeCapture' -as [type])) {
@@ -208,6 +223,9 @@ try {
     Invoke-Button $main 'Add PC'
     $editor = Wait-Window 'Add PC'
     Set-Field $editor 'PC name (DNS, IPv4, [IPv6], optionally :port)' 'cancelled.invalid'
+    Select-ComboItem $editor 'Server certificate authentication' ('Interactive ' + [char]0x2014 + ' Let Windows prompt when server authentication fails.')
+    Save-AppScreenshot $editor 'editor'
+    $report.tests += @{name='Styled certificate dropdown preserves policy selection';result='Passed'}
     Invoke-Button $editor 'Cancel'
     $main = Wait-Window 'SessionDock'
     if (-not (Find-Element $main 'Add your first PC' ([System.Windows.Automation.ControlType]::Text))) { throw 'Cancel did not preserve the empty library.' }
@@ -244,6 +262,10 @@ try {
     $report.tests += @{name='About shows the actual app version';result='Passed'}
     Save-AppScreenshot $settings 'about'
     Select-SettingsPage $settings 'Personalization'
+    Select-ComboItem $settings 'Appearance' 'Light'
+    Save-AppScreenshot $settings 'light'
+    Select-ComboItem $settings 'Appearance' 'Dark'
+    $report.tests += @{name='Styled appearance dropdown switches light and dark';result='Passed'}
     $previewToggle = Find-Element $settings 'Save last-session previews' ([System.Windows.Automation.ControlType]::CheckBox)
     if (-not $previewToggle) { throw 'Preview opt-in setting is missing.' }
     $toggle = $previewToggle.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)
