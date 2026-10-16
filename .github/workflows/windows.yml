@@ -33,7 +33,7 @@ jobs:
       - name: Test published app using isolated UI Automation
         shell: powershell
         timeout-minutes: 3
-        run: ./scripts/Test-UI.ps1
+        run: ./scripts/Test-UI.ps1 -CaptureScreenshots
       - name: Prepare download, source, and checksums
         shell: powershell
         run: ./scripts/Package-Preview.ps1

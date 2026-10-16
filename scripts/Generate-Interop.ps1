@@ -68,6 +68,38 @@ $connectionBar = $nonScriptable.GetProperty('ConnectionBarText')
 if (-not $connectionBar -or -not $connectionBar.CanWrite -or $connectionBar.PropertyType -ne [string]) {
     throw 'The generated non-scriptable interface cannot configure ConnectionBarText.'
 }
+# Record the native setter slots from the same installed typelib for independent CI evidence.
+# Runtime discovers/validates native signatures itself and never trusts offsets from JSON.
+$passwordMetadata = @(
+    @{ Type='MSTSCLib.IMsTscNonScriptable'; Iid='c1e6743a-41c1-4a74-832a-0dd06c1c7a0e'; Member='ClearTextPassword' },
+    @{ Type='MSTSCLib.IMsRdpClientTransportSettings2'; Iid='67341688-d606-4c73-a5d2-2e0489009319'; Member='GatewayPassword' }
+) | ForEach-Object {
+    $entry = $_
+    $type = $assembly.GetType($entry.Type, $true)
+    if ($type.GUID -ne [Guid]$entry.Iid) { throw "Unexpected password interface IID: $($entry.Type)." }
+    $property = $type.GetProperty($entry.Member)
+    if (-not $property -or -not $property.CanWrite -or $property.PropertyType -ne [string]) {
+        throw "The generated password interface is missing a string setter: $($entry.Member)."
+    }
+    $setter = $property.GetSetMethod()
+    $parameters = @($setter.GetParameters())
+    if ($setter.ReturnType -ne [void] -or $parameters.Count -ne 1 -or $parameters[0].ParameterType -ne [string]) {
+        throw "Unexpected generated password setter signature: $($entry.Member)."
+    }
+    $marshal = @($parameters[0].GetCustomAttributes([Runtime.InteropServices.MarshalAsAttribute], $false))
+    if ($marshal.Count -ne 1 -or $marshal[0].Value -ne [Runtime.InteropServices.UnmanagedType]::BStr) {
+        throw "The generated password setter does not marshal an input BSTR: $($entry.Member)."
+    }
+    [ordered]@{
+        interfaceName = $entry.Type
+        interfaceId = $type.GUID.ToString()
+        member = $entry.Member
+        nativeSlot = [Runtime.InteropServices.Marshal]::GetComSlotForMethodInfo($setter)
+        parameter = 'BSTR'
+        nativeReturn = 'HRESULT'
+    }
+}
+$passwordMetadata | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $directory 'interop-password-signatures.json') -Encoding UTF8
 $expected = [ordered]@{
     OnConnecting=1; OnConnected=2; OnLoginComplete=3; OnDisconnected=4;
     OnEnterFullScreenMode=5; OnLeaveFullScreenMode=6; OnRequestGoFullScreen=8;
@@ -119,6 +151,7 @@ $manifest = [ordered]@{
     eventDispatchValidated = $true
     eventSignaturesValidated = $true
     nonScriptableConnectionBarValidated = $true
+    passwordSetterSignaturesValidated = $true
     realLoginValidated = $false
     outputHashes = @((Get-FileHash -LiteralPath $interop -Algorithm SHA256), (Get-FileHash -LiteralPath $axinterop -Algorithm SHA256)) | Select-Object Path, Hash
 }

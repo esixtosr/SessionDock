@@ -5,7 +5,7 @@ using SessionDock.Core;
 
 namespace SessionDock.Rdp.Windows;
 
-public sealed record RdpOptionProbeResult(string Target, string Member, bool Accepted, int? ErrorCode);
+public sealed record RdpOptionProbeResult(string Target, string Member, bool Accepted, int? ErrorCode, string? Diagnostic = null);
 
 public sealed class RdpStateChangedEventArgs(SessionState state, string message, int? code = null) : EventArgs
 {
@@ -85,17 +85,27 @@ public sealed class RdpSessionControl : AxHost
             catch (Exception ex) when (ex is COMException or TargetInvocationException or MissingMethodException or NotSupportedException)
             { results.Add(new(option.Target.ToString(), option.Member, false, ComDispatch.ErrorCode(ex))); }
         }
+        using var probePassword = new System.Security.SecureString();
+        // Reserved synthetic marker only, never a real credential or a network connection.
+        foreach (char character in "SessionDock-Probe-Only!42") probePassword.AppendChar(character);
+        probePassword.MakeReadOnly();
         using var emptyPassword = new System.Security.SecureString();
-        foreach (var (target, targetName, member) in new[] { (_advanced, "Advanced", "ClearTextPassword"), (_transport, "Transport", "GatewayPassword") })
+        foreach (bool gatewayPassword in new[] { false, true })
         {
-            try
+            string targetName = gatewayPassword ? "Transport" : "NonScriptable";
+            string member = gatewayPassword ? "GatewayPassword" : "ClearTextPassword";
+            foreach (bool clear in new[] { false, true })
             {
-                if (target is null) throw new NotSupportedException();
-                ComDispatch.SetSecret(target, member, emptyPassword);
-                results.Add(new(targetName, member, true, null));
+                try
+                {
+                    var password = clear ? emptyPassword : probePassword;
+                    if (gatewayPassword) NativePasswordSetter.SetGateway(_transport ?? throw new NotSupportedException(), password);
+                    else NativePasswordSetter.SetDesktop(_client, password);
+                    results.Add(new(targetName, clear ? member + " (clear)" : member, true, null));
+                }
+                catch (Exception ex) when (ex is COMException or TargetInvocationException or MissingMethodException or NotSupportedException)
+                { results.Add(new(targetName, clear ? member + " (clear)" : member, false, ComDispatch.ErrorCode(ex), ex is NotSupportedException ? ex.Message : "Native password setter rejected the request.")); }
             }
-            catch (Exception ex) when (ex is COMException or TargetInvocationException or MissingMethodException or NotSupportedException)
-            { results.Add(new(targetName, member, false, ComDispatch.ErrorCode(ex))); }
         }
         if (_transport is not null) ComDispatch.TrySet(_transport, "GatewayUsageMethod", 0u);
         return results;
@@ -174,12 +184,12 @@ public sealed class RdpSessionControl : AxHost
             if (!_canFullScreen) _limitations.Add("Native full screen requires the generated Windows interop wrapper and successful ConnectionBarText setup.");
             ComDispatch.Set(_client, "UserName", credentials.Username);
             ComDispatch.Set(_client, "Domain", credentials.Domain);
-            ComDispatch.SetSecret(_advanced, "ClearTextPassword", credentials.Password);
+            NativePasswordSetter.SetDesktop(_client, credentials.Password);
             if (gateway is not null && gatewayCredentials is not null)
             {
                 ComDispatch.Set(_transport!, "GatewayUsername", gatewayCredentials.Username);
                 ComDispatch.Set(_transport!, "GatewayDomain", gatewayCredentials.Domain);
-                ComDispatch.SetSecret(_transport!, "GatewayPassword", gatewayCredentials.Password);
+                NativePasswordSetter.SetGateway(_transport!, gatewayCredentials.Password);
             }
             SetState(SessionState.Connecting, "Connecting; successful sign-in has not yet been confirmed.");
             ComDispatch.Call(_client, "Connect");
@@ -358,8 +368,11 @@ public sealed class RdpSessionControl : AxHost
     private void ClearControlPasswords()
     {
         // Clearing credentials only after disconnect/failure preserves native reconnect semantics.
-        if (_advanced is not null) ComDispatch.TrySet(_advanced, "ClearTextPassword", "");
-        if (_transport is not null) ComDispatch.TrySet(_transport, "GatewayPassword", "");
+        using var emptyPassword = new System.Security.SecureString();
+        try { if (_client is not null) NativePasswordSetter.SetDesktop(_client, emptyPassword); }
+        catch (Exception ex) when (ex is COMException or NotSupportedException) { }
+        try { if (_transport is not null) NativePasswordSetter.SetGateway(_transport, emptyPassword); }
+        catch (Exception ex) when (ex is COMException or NotSupportedException) { }
     }
     private void SetState(SessionState state, string message, int? code = null)
     {
