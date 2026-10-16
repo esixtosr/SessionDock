@@ -35,18 +35,29 @@ jobs:
         timeout-minutes: 3
         run: ./scripts/Test-UI.ps1 -CaptureScreenshots
       - name: Prepare download, source, and checksums
+        id: package
         shell: powershell
-        run: ./scripts/Package-Preview.ps1
+        run: |
+          ./scripts/Package-Preview.ps1
+          [xml]$project = Get-Content Directory.Build.props
+          "version=$($project.Project.PropertyGroup.Version)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
       - name: Check extracted download, installation, and uninstall
         shell: powershell
         timeout-minutes: 3
         run: |
-          Expand-Archive artifacts/release/SessionDock-v0.1.0-preview.2-win-x64.zip artifacts/extracted-preview
-          ./scripts/Test-Install.ps1 -AllowDisposableRunner -BundlePath artifacts/extracted-preview/SessionDock-win-x64
+          $zip = @(Get-ChildItem artifacts/release/*-win-x64.zip)
+          if ($zip.Count -ne 1) { throw 'Expected one numbered Windows ZIP.' }
+          Expand-Archive $zip[0].FullName artifacts/extracted-preview
+          ./scripts/Test-Install.ps1 -AllowDisposableRunner -BundlePath artifacts/extracted-preview
       - name: Windows control and temporary credential probe (no network)
         shell: powershell
         timeout-minutes: 3
         run: ./scripts/Test-Engine.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SessionDock-v${{ steps.package.outputs.version }}-Windows-x64
+          path: artifacts/SessionDock-win-x64
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: SessionDock-release-files

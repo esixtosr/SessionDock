@@ -145,7 +145,7 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Data.Sqlite": "[10.0.13, )",
-          "SessionDock.Core": "[0.1.0-preview.2, )"
+          "SessionDock.Core": "[0.1.0-preview.3, )"
         }
       }
     },

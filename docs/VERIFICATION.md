@@ -97,3 +97,13 @@ The user reported no preview after opt-in, with the enabled-setting fallback too
 Local locked restore, Release build (zero warnings/errors), 112 portable tests, self-contained publish, all five isolated UI checks, existing native/vault/storage probes and the new compositor probe passed. The compositor probe verifies actual synthetic blue/gold pixels cropped from a window, excludes a covering magenta window, and rejects a minimized window. The synthetic source title is changed while covered to trigger a new compositor frame; Windows need not supply new frames for unchanged content. A first attempted assertion that a synthetic control refusing WM_PRINT would always make PrintWindow fail was removed because Windows did not behave that way. No actual remote desktop was used.
 
 Real RDP capture after this fix, native full screen, lock/unlock, and responsiveness remain NOT VERIFIED until user testing. Windows projection references intentionally updated; bundled .NET/Windows Desktop runtime remains 10.0.13 (verified in published runtimeconfig). Published releases remain unchanged.
+
+## Version/download follow-up, 2026-10-16
+
+The user confirmed real previews on two PCs and subsequently reported the restart/clear checks working in their environment. This is user-reported acceptance, separate from automated probes.
+
+Added version 0.1.0-preview.3 in the library footer and About, with actual assembly informational version, source build, executable location and manual downloads link. Numbered Windows artifacts contain app files directly; the installer reads the same version from the DLL. Package labels are checked against the published binary. Existing published releases/tags remain unchanged. Validation results for this change follow below.
+
+Local results: Release build passed with zero warnings/errors; all 112 portable tests passed; self-contained publish passed; all six isolated UI checks passed, including About matching the actual DLL version. Packaging rejects mismatched version/build source and dirty tracked source. The Windows CI install smoke now requires Installed Apps registration to match the DLL version exactly. Full install/uninstall remains a disposable-runner check, not executed on this personal machine.
+
+The flat numbered Windows ZIP was inspected: SessionDock.exe, Install.cmd and BUILD-INFO.json are at its root. About and library screenshots were visually reviewed. A repeat UI run failed while looking for Clear previews on a different settings page; the test now waits for each selected page's heading before continuing, and all six checks passed on rerun.
