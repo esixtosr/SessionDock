@@ -56,7 +56,8 @@ public sealed class RdpSessionControl : AxHost
         new("Clipboard, sound, printers, smart cards, microphone", CapabilityStatus.Conditional, "Request mapping implemented; policy, devices, and both clipboard directions need tests."),
         new("RD Gateway", _transport is null ? CapabilityStatus.Unavailable : CapabilityStatus.Conditional, "Separate gateway credentials; real gateway, bypass, and proxy tests pending."),
         new("Exact folder sharing and read-only", CapabilityStatus.Unavailable, "No folder request is converted into whole-drive sharing."),
-        new("Directional clipboard, camera, multi-monitor, remote DPI, mouse swap, thumbnails", CapabilityStatus.Unavailable, "No verified implementation; UI must keep controls unavailable."),
+        new("Last-session previews", CapabilityStatus.Conditional, "Optional app-window compositor capture cropped to the RDP client, with native rendering fallback; actual remote capture requires interactive verification."),
+        new("Directional clipboard, camera, multi-monitor, remote DPI, mouse swap", CapabilityStatus.Unavailable, "No verified implementation; UI must keep controls unavailable."),
         new("Cloud workspaces, published apps, Teams, Shortpath", CapabilityStatus.Deferred, "Outside the saved-PC release.")
     ];
     /// <summary>Applies preconnection settings only. Intended for the explicit no-network Windows probe.
